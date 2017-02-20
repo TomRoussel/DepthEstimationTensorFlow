@@ -2,18 +2,18 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-02-07 17:14:36
+# @Last Modified time: 2017-02-20 11:02:20
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
 import yaml
 import numpy as np
 
+# FIXME: Test graph
+# FIXME: Test summary
 # FIXME: Test config file I/O
 # FIXME: Test loss function
-# TODO: Implement weight loading
-# TODO: Implement evaluation
-
+# TODO: Implement evaluation & fprop
 
 
 class Depth_Estim_Net(object):
@@ -34,7 +34,7 @@ class Depth_Estim_Net(object):
 			self.parse_config_from_file(confFileName)
 
 		self.summaryLocation = summaryLocation
-		self.weightsLoc = weightsLoc
+		self.weightsLoc = "%s/1.ckpt" % weightsLoc
 
 	def parse_config(self, conf):
 		assert _check_conf_dictionary(conf), "Configuration is invalid, parameters are missing"
@@ -122,6 +122,11 @@ class Depth_Estim_Net(object):
 		batchSize = self.config["batchSize"]
 		self.train(generator(rgb_in, depth_in, batchSize))
 
+	def load_weights(self, sess, checkpoint, training = False):
+		print("Loading weights from checkpoint %s" % checkpoint)
+		saver = tf.train.Saver()
+		saver.restore(sess, checkpoint)
+
 
 	def train(self, trainingData):
 		"""
@@ -142,6 +147,7 @@ class Depth_Estim_Net(object):
 			grads = optimizer.compute_gradients(loss)
 			trainOp = grads.apply_gradients(grads)
 			sumOp = tf.merge_all_summaries()
+			init_op = tf.global_variables_initializer()
 
 		print("Starting tensorflow session")
 
@@ -149,6 +155,10 @@ class Depth_Estim_Net(object):
 			sumWriter = tf.train.SummaryWriter(self.summaryLocation, graph=sess.graph)
 			saver = tf.train.Saver()
 			idT = 0
+			
+			print("Initializing weights")
+			sess.run(init_op)
+			print("Done, running training ops")
 			for in_rgb, in_depth in trainingData:
 				_, currentLoss, summary = sess.run([trainOp, loss, sumOp], feed_dict = {"Training/depth_in:0":in_depth, "Input/RGB_in:0": in_rgb})
 				print("Current loss is: %1.3f" % currentLoss)
