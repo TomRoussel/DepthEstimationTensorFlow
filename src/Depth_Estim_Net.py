@@ -150,7 +150,7 @@ class Depth_Estim_Net(object):
 			# Applying gradients
 			grads = optimizer.compute_gradients(loss)
 			trainOp = optimizer.apply_gradients(grads)
-			sumOp = tf.merge_all_summaries()
+			sumOp = tf.summary.merge_all()
 			init_op = tf.global_variables_initializer()
 
 		print("Starting tensorflow session")
@@ -175,7 +175,7 @@ class Depth_Estim_Net(object):
 
 	def add_l2_loss(self, inGraph, gtDepth):
 		flatDepth = tf.reshape(gtDepth, shape = (self.config["batchSize"], self.config["HOut"] * self.config["WOut"]))
-		return tf.nn.l2_loss(tf.sub(inGraph, flatDepth))
+		return tf.nn.l2_loss(tf.subtract(inGraph, flatDepth))
 
 	def _check_conf_dictionary(self, conf):
 		"""
