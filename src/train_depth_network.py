@@ -10,11 +10,11 @@ import h5py
 
 # TODO: Make argument parser
 
-dataFn = "/esat/citrine/tmp/troussel/IROS/kinect/StijnKinectDataNP/1.hdf5" 
-configFile = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/conf/init.yaml"
+dataFn = "/home/tom/depth_estim/2.hdf5" 
+configFile = "/home/tom/depth_estim/conf/init.yaml"
 
-summaryLoc = "/usr/data/tmp/troussel/IROS/depth_estim/1"
-weightsLoc = "/usr/data/tmp/troussel/IROS/depth_estim/1"
+summaryLoc = "/home/tom/depth_estim/io"
+weightsLoc = "/home/tom/depth_estim/io"
 
 def prepare_data(fn, batchSize):
 	dfile = h5py.File(fn)
