@@ -2,7 +2,7 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-02-20 11:02:20
+# @Last Modified time: 2017-02-20 16:51:01
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -44,8 +44,10 @@ class Depth_Estim_Net(object):
 		"""
 			Reads yaml file, fn being the path to that file
 		"""
-		conf = yaml.load(fn)
-		assert _check_conf_dictionary(conf), "Configuration is invalid, parameters are missing"
+		with open(fn, 'r') as fid:
+			conf = yaml.load(fid.read())
+		# import pdb; pdb.set_trace()
+		assert self._check_conf_dictionary(conf), "Configuration is invalid, parameters are missing"
 		self.config = conf
 
 	def dump_config_file(self, fn):
@@ -82,7 +84,7 @@ class Depth_Estim_Net(object):
 		self.training = training
 		# Input placeholder graph
 		with tf.name_scope("Input"):
-			inputGraph = tf.placeholder(tf.int, shape = [self.config["batchSize"], self.config["H"], self.config["W"], 3], name="RGB_in")
+			inputGraph = tf.placeholder(tf.float32, shape = [self.config["batchSize"], self.config["H"], self.config["W"], 3], name="RGB_in")
 
 		with tf.name_scope("Convolution_layers"):
 			# Several layers convolution layers
@@ -102,6 +104,8 @@ class Depth_Estim_Net(object):
 
 		# Output layers
 		with tf.name_scope("Fully_connected"):
+			# Flatten
+			graphTail = tf.reshape(graphTail, [self.config["batchSize"], -1])
 			graphTail = fully_connected(inputs = graphTail, num_outputs = 4096)
 			graphTail = fully_connected(inputs = graphTail, num_outputs = self.config["HOut"] * self.config["WOut"])
 
@@ -138,21 +142,21 @@ class Depth_Estim_Net(object):
 		optimizer = tf.train.AdamOptimizer(learning_rate=self.config["learnRate"])
 		print("Building graph")
 		with tf.name_scope("Training"):
-			self.fullGraph = build_graph(training = True)
+			self.fullGraph = self.build_graph(training = True)
 			gtDepthPlaceholder = tf.placeholder(tf.float32, shape = [self.config["batchSize"], self.config["HOut"], self.config["WOut"]], name="depth_in")
-			loss = add_l2_loss(self.fullGraph, gtDepthPlaceholder)
-			tf.scalar_summary(loss)
+			loss = self.add_l2_loss(self.fullGraph, gtDepthPlaceholder)
+			tf.summary.scalar("Loss", loss) # FIXME: deprecated, replace 
 
 			# Applying gradients
 			grads = optimizer.compute_gradients(loss)
-			trainOp = grads.apply_gradients(grads)
+			trainOp = optimizer.apply_gradients(grads)
 			sumOp = tf.merge_all_summaries()
 			init_op = tf.global_variables_initializer()
 
 		print("Starting tensorflow session")
 
 		with tf.Session() as sess:
-			sumWriter = tf.train.SummaryWriter(self.summaryLocation, graph=sess.graph)
+			sumWriter = tf.summary.FileWriter(self.summaryLocation, graph=sess.graph)
 			saver = tf.train.Saver()
 			idT = 0
 			
@@ -171,7 +175,7 @@ class Depth_Estim_Net(object):
 
 	def add_l2_loss(self, inGraph, gtDepth):
 		flatDepth = tf.reshape(gtDepth, shape = (self.config["batchSize"], self.config["HOut"] * self.config["WOut"]))
-		return tf.nn.l2_loss(tf.sub(self.fullGraph, flatDepth))
+		return tf.nn.l2_loss(tf.sub(inGraph, flatDepth))
 
 	def _check_conf_dictionary(self, conf):
 		"""

@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-02-07 16:14:25
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-02-20 11:02:39
+# @Last Modified time: 2017-02-20 13:58:27
 import numpy as np
 import argparse
 from Depth_Estim_Net import Depth_Estim_Net as DEN
@@ -13,6 +13,9 @@ import h5py
 dataFn = "/esat/citrine/tmp/troussel/IROS/kinect/StijnKinectDataNP/1.hdf5" 
 configFile = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/conf/init.yaml"
 
+summaryLoc = "/usr/data/tmp/troussel/IROS/depth_estim/1"
+weightsLoc = "/usr/data/tmp/troussel/IROS/depth_estim/1"
+
 def prepare_data(fn, batchSize):
 	dfile = h5py.File(fn)
 	imAmount = dfile["depth"]["depth_data"].shape[2]
@@ -20,8 +23,8 @@ def prepare_data(fn, batchSize):
 	# Loop over all batches
 	for x in xrange(batchAmount):
 		idStart = x*batchSize; idEnd = (x+1)*batchSize;
-		rgb = np.asarray(:,:,:,idStart:idEnd)
-		depth = np.asarray(:,:,idStart:idEnd)
+		rgb = np.asarray(dfile["rgb"]["rgb_data"][:,:,:,idStart:idEnd])
+		depth = np.asarray(dfile["depth"]["depth_data"][:,:,idStart:idEnd])
 
 		rgb = np.moveaxis(rgb, [0,1,2,3], [3,0,1,2])
 		depth = np.moveaxis(depth, [0,1,2], [2,0,1])
