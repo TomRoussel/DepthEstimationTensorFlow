@@ -1,4 +1,4 @@
-batchSize       : 1
+batchSize       : 20
 H               : 240
 W               : 320
 HOut            : 55

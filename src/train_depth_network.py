@@ -7,10 +7,11 @@ import numpy as np
 import argparse
 from Depth_Estim_Net import Depth_Estim_Net as DEN
 import h5py
+from math import floor
 
 # TODO: Make argument parser
 
-dataFn = "/home/tom/depth_estim/2.hdf5" 
+dataFn = "/home/tom/depth_estim/1.hdf5" 
 configFile = "/home/tom/depth_estim/conf/init.yaml"
 
 summaryLoc = "/home/tom/depth_estim/io"
@@ -19,16 +20,20 @@ weightsLoc = "/home/tom/depth_estim/io"
 def prepare_data(fn, batchSize):
 	dfile = h5py.File(fn)
 	imAmount = dfile["depth"]["depth_data"].shape[2]
-	batchAmount = floor(batchSize/imAmount)
+	batchAmount = imAmount//batchSize
+	print("Amount of batches: %d" % batchAmount)
 	# Loop over all batches
 	for x in xrange(batchAmount):
 		idStart = x*batchSize; idEnd = (x+1)*batchSize;
 		rgb = np.asarray(dfile["rgb"]["rgb_data"][:,:,:,idStart:idEnd])
 		depth = np.asarray(dfile["depth"]["depth_data"][:,:,idStart:idEnd])
-
-		rgb = np.moveaxis(rgb, [0,1,2,3], [3,0,1,2])
-		depth = np.moveaxis(depth, [0,1,2], [2,0,1])
-
+		print("Depth shape init: %d %d %d" % depth.shape)
+		print("RGB shape init: %d %d %d %d" % rgb.shape)
+	
+		rgb = np.transpose(rgb, (3,0,1,2)) 
+		depth = np.transpose(depth,(2,0,1)) 
+		print("Depth shape: %d %d %d" % depth.shape)
+		print("RGB shape: %d %d %d %d" % rgb.shape)
 		yield (rgb, depth)
 
 def safe_mkdir(dir):

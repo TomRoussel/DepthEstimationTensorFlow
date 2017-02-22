@@ -8,10 +8,10 @@ import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
 import yaml
 import numpy as np
+from math import floor
 
 # FIXME: Test graph
 # FIXME: Test summary
-# FIXME: Test config file I/O
 # FIXME: Test loss function
 # TODO: Implement evaluation & fprop
 
@@ -57,12 +57,12 @@ class Depth_Estim_Net(object):
 		with open(fn, 'w') as fid:
 			yaml.dump(self.config, stream=fid, default_flow_style=False)
 
-	def conv_layer(self, inGraph, outChannels, kernelSize):
+	def conv_layer(self, inGraph, outChannels, kernelSize, stride=1):
 		# https://www.tensorflow.org/api_docs/python/contrib.layers/higher_level_ops_for_building_neural_network_layers_#convolution2d
 		# stride?
 		# padding?
 		# weights initialization
-		return convolution2d(inputs = inGraph, num_outputs = outChannels, kernel_size = kernelSize)
+		return convolution2d(inputs = inGraph, num_outputs = outChannels, kernel_size = kernelSize, padding='VALID', stride=stride)
 
 	def in_between_layers(self, inGraph, training, maxPool = True):
 		"""
@@ -75,7 +75,7 @@ class Depth_Estim_Net(object):
 
 		if maxPool:
 			# padding?
-			graphTail = max_pool2d(inputs = graphTail, kernel_size = self.config["maxPoolKernel"], stride = self.config["maxPoolStride"], padding = "SAME")
+			graphTail = max_pool2d(inputs = graphTail, kernel_size = self.config["maxPoolKernel"], stride = self.config["maxPoolStride"], padding = "VALID")
 
 		graphTail = tf.nn.relu(graphTail)
 		return graphTail
@@ -84,23 +84,32 @@ class Depth_Estim_Net(object):
 		self.training = training
 		# Input placeholder graph
 		with tf.name_scope("Input"):
-			inputGraph = tf.placeholder(tf.float32, shape = [self.config["batchSize"], self.config["H"], self.config["W"], 3], name="RGB_in")
+			self.inputGraph = tf.placeholder(tf.float32, shape = [self.config["batchSize"], self.config["H"], self.config["W"], 3], name="RGB_in")
 
 		with tf.name_scope("Convolution_layers"):
 			# Several layers convolution layers
-			graphTail = self.conv_layer(inputGraph, outChannels = 96, kernelSize = 11)
+			graphTail = self.conv_layer(self.inputGraph, outChannels = 96, kernelSize = 11, stride = 4)
+			print(graphTail)
 			graphTail = self.in_between_layers(graphTail, training = training)
+			print(graphTail)
 
 			graphTail = self.conv_layer(graphTail, outChannels = 256, kernelSize = 5)
+			print(graphTail)
 			graphTail = self.in_between_layers(graphTail, training = training)
+			print(graphTail)
 
 			graphTail = self.conv_layer(graphTail, outChannels = 384, kernelSize = 3)
+			print(graphTail)
 			graphTail = self.in_between_layers(graphTail, maxPool = False, training = training)
+			print(graphTail)
 			
 			graphTail = self.conv_layer(graphTail, outChannels = 384, kernelSize = 3)
+			print(graphTail)
 			graphTail = self.in_between_layers(graphTail, maxPool = False, training = training)
+			print(graphTail)
 
 			graphTail = self.conv_layer(graphTail, outChannels = 256, kernelSize = 3)
+			print(graphTail)
 
 		# Output layers
 		with tf.name_scope("Fully_connected"):
@@ -143,8 +152,8 @@ class Depth_Estim_Net(object):
 		print("Building graph")
 		with tf.name_scope("Training"):
 			self.fullGraph = self.build_graph(training = True)
-			gtDepthPlaceholder = tf.placeholder(tf.float32, shape = [self.config["batchSize"], self.config["HOut"], self.config["WOut"]], name="depth_in")
-			loss = self.add_l2_loss(self.fullGraph, gtDepthPlaceholder)
+			self.gtDepthPlaceholder = tf.placeholder(tf.float32, shape = [self.config["batchSize"], self.config["HOut"], self.config["WOut"]], name="depth_in")
+			loss = self.add_l2_loss(self.fullGraph, self.gtDepthPlaceholder)
 			tf.summary.scalar("Loss", loss) # FIXME: deprecated, replace 
 
 			# Applying gradients
@@ -154,7 +163,7 @@ class Depth_Estim_Net(object):
 			init_op = tf.global_variables_initializer()
 
 		print("Starting tensorflow session")
-
+		for key in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES): print(key)
 		with tf.Session() as sess:
 			sumWriter = tf.summary.FileWriter(self.summaryLocation, graph=sess.graph)
 			saver = tf.train.Saver()
@@ -164,14 +173,13 @@ class Depth_Estim_Net(object):
 			sess.run(init_op)
 			print("Done, running training ops")
 			for in_rgb, in_depth in trainingData:
-				_, currentLoss, summary = sess.run([trainOp, loss, sumOp], feed_dict = {"Training/depth_in:0":in_depth, "Input/RGB_in:0": in_rgb})
+				_, currentLoss, summary = sess.run([trainOp, loss, sumOp], feed_dict = {self.gtDepthPlaceholder:in_depth, self.inputGraph: in_rgb})
 				print("Current loss is: %1.3f" % currentLoss)
 				
 				sumWriter.add_summary(summary, idT)
 				idT += 1
 
-			saver.write(self.weightsLoc)
-
+			saver.save(sess, self.weightsLoc, 1)
 
 	def add_l2_loss(self, inGraph, gtDepth):
 		flatDepth = tf.reshape(gtDepth, shape = (self.config["batchSize"], self.config["HOut"] * self.config["WOut"]))
