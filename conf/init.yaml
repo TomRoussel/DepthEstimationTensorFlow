@@ -1,4 +1,4 @@
-batchSize       : 20
+batchSize       : 32
 H               : 240
 W               : 320
 HOut            : 55
@@ -6,4 +6,4 @@ WOut            : 74
 batchNormDecay  : 0.9
 maxPoolKernel   : 2
 maxPoolStride   : 2
-learnRate       : 0.7
+learnRate       : 0.9

@@ -2,7 +2,7 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-02-20 16:51:01
+# @Last Modified time: 2017-02-23 12:49:52
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -10,10 +10,11 @@ import yaml
 import numpy as np
 from math import floor
 
-# FIXME: Test graph
 # FIXME: Test summary
-# FIXME: Test loss function
+# FIXME: Test parameters
 # TODO: Implement evaluation & fprop
+# TODO: Add image summary for output depth map
+
 
 
 class Depth_Estim_Net(object):
@@ -34,7 +35,8 @@ class Depth_Estim_Net(object):
 			self.parse_config_from_file(confFileName)
 
 		self.summaryLocation = summaryLocation
-		self.weightsLoc = "%s/1.ckpt" % weightsLoc
+		self.weightsLoc = weightsLoc
+		self.checkpointFile = "%s/model.ckpt" % weightsLoc
 
 	def parse_config(self, conf):
 		assert _check_conf_dictionary(conf), "Configuration is invalid, parameters are missing"
@@ -103,7 +105,7 @@ class Depth_Estim_Net(object):
 			graphTail = self.in_between_layers(graphTail, maxPool = False, training = training)
 			print(graphTail)
 			
-			graphTail = self.conv_layer(graphTail, outChannels = 384, kernelSize = 3)
+			graphTail = self.conv_layer(graphTail, outChannels = 384, kernelSize = 3, stride=2)
 			print(graphTail)
 			graphTail = self.in_between_layers(graphTail, maxPool = False, training = training)
 			print(graphTail)
@@ -135,29 +137,57 @@ class Depth_Estim_Net(object):
 		batchSize = self.config["batchSize"]
 		self.train(generator(rgb_in, depth_in, batchSize))
 
-	def load_weights(self, sess, checkpoint, training = False):
-		print("Loading weights from checkpoint %s" % checkpoint)
-		saver = tf.train.Saver()
-		saver.restore(sess, checkpoint)
+	def load_weights(self, sess, checkpoint, saver, training = False):
+		# ckpt = tf.train.get_checkpoint_state(checkpoint)
+		# saver.recover_last_checkpoints(checkpoint)
+		# model = saver.last_checkpoints[-1]
+		model = self.checkpointFile + "-11"
+		print("Loading weights from checkpoint %s" % model)
+
+		saver.restore(sess, model)
+
+	def add_image_summary(self, images, name, batches, isRGB, width = -1, height = -1, reshape = False):
+		# import pdb; pdb.set_trace()
+		if reshape and isRGB:
+			images = tf.reshape(images, [-1, height, width,  3])
+		elif reshape and not isRGB:
+			images = tf.reshape(images, [-1, height, width,  1])
 
 
-	def train(self, trainingData):
+		slicedImages = tf.slice(images, [0,0,0,0], [batches,-1,-1, -1])
+
+		tf.summary.image(name, slicedImages)
+
+	def summaries(self, training = True):
+		# Images
+		self.add_image_summary(self.fullGraph, "Depth Estimation", 3, False, width = self.config["WOut"], height = self.config["HOut"], reshape = True)
+		self.add_image_summary(self.inputGraph, "RGB", 3, True)		
+		if training:
+			self.add_image_summary(tf.reshape(self.gtDepthPlaceholder, [-1, self.config["HOut"], self.config["WOut"], 1]), "GT", 3, False)
+
+		# Scalar
+		if training:
+			tf.summary.scalar("Loss", self.loss) 
+
+	def train(self, trainingData, loadChkpt = False):
 		"""
 			Train the network using inputData. This should be a numpy array, [images x H x W x C].
 			gtDepth [images x H x W]
 			@trainingData: Is a generator function that outputs 2 variables, (in_rgb, in_depth)
 		"""
 		# Define optimizer
-		optimizer = tf.train.AdamOptimizer(learning_rate=self.config["learnRate"])
+		optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.config["learnRate"])
+		# optimizer = tf.train.AdamOptimizer(learning_rate=self.config["learnRate"])
 		print("Building graph")
 		with tf.name_scope("Training"):
 			self.fullGraph = self.build_graph(training = True)
 			self.gtDepthPlaceholder = tf.placeholder(tf.float32, shape = [self.config["batchSize"], self.config["HOut"], self.config["WOut"]], name="depth_in")
-			loss = self.add_l2_loss(self.fullGraph, self.gtDepthPlaceholder)
-			tf.summary.scalar("Loss", loss) # FIXME: deprecated, replace 
+			self.loss = self.add_l2_loss(self.fullGraph, self.gtDepthPlaceholder)
+			
+			self.summaries()
 
 			# Applying gradients
-			grads = optimizer.compute_gradients(loss)
+			grads = optimizer.compute_gradients(self.loss)
 			trainOp = optimizer.apply_gradients(grads)
 			sumOp = tf.summary.merge_all()
 			init_op = tf.global_variables_initializer()
@@ -169,17 +199,25 @@ class Depth_Estim_Net(object):
 			saver = tf.train.Saver()
 			idT = 0
 			
-			print("Initializing weights")
-			sess.run(init_op)
+			if loadChkpt:
+				print("Loading weights from file")
+				self.load_weights(sess, self.weightsLoc, saver)
+			else:
+				print("Initializing weights")
+				sess.run(init_op)
 			print("Done, running training ops")
 			for in_rgb, in_depth in trainingData:
-				_, currentLoss, summary = sess.run([trainOp, loss, sumOp], feed_dict = {self.gtDepthPlaceholder:in_depth, self.inputGraph: in_rgb})
+				# import pdb; pdb.set_trace()
+
+				self.debug1(idT)
+				_, currentLoss, summary = sess.run([trainOp, self.loss, sumOp], feed_dict = {self.gtDepthPlaceholder:in_depth, self.inputGraph: in_rgb})
 				print("Current loss is: %1.3f" % currentLoss)
-				
+				self.debug2(idT)
+
 				sumWriter.add_summary(summary, idT)
 				idT += 1
 
-			saver.save(sess, self.weightsLoc, 1)
+			saver.save(sess, self.checkpointFile, global_step=11)
 
 	def add_l2_loss(self, inGraph, gtDepth):
 		flatDepth = tf.reshape(gtDepth, shape = (self.config["batchSize"], self.config["HOut"] * self.config["WOut"]))
@@ -196,3 +234,30 @@ class Depth_Estim_Net(object):
 		assert not any([not x in parameters for x in conf.keys()]), "Unknown parameter given"
 		# Check if all parameters are present
 		return all([x in conf.keys() for x in parameters])
+
+	def debug1(self, idT):
+		"""
+			Generic debug function, run every time before sess.run is called
+		"""
+		# fn = dbFile1 = "/users/visics/troussel/tmp/1.1"
+		# var_1 = [v for v in tf.all_variables() if v.name == "fully_connected_1/weights:0"][0]
+		# if idT == 0:
+		# 	with open(fn, 'w') as f:
+		# 		f.write(var_1.eval())
+		# print(var_1.eval())
+		return
+
+	def debug2(self, idT):
+		"""
+			Generic debug function, run every time after sess.run is called
+		"""
+		# fn = dbFile1 = "/users/visics/troussel/tmp/1.2"
+		# var_1 = [v for v in tf.all_variables() if v.name == "fully_connected_1/weights:0"][0]
+		# if idT == 10:
+		# 	with open(fn, 'w') as f:
+		# 		f.write(var_1.eval())
+		# print(var_1.eval())
+		return
+
+
+
