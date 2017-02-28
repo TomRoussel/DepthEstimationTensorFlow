@@ -2,7 +2,7 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-02-23 12:49:52
+# @Last Modified time: 2017-02-28 14:48:36
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -10,10 +10,7 @@ import yaml
 import numpy as np
 from math import floor
 
-# FIXME: Test summary
-# FIXME: Test parameters
 # TODO: Implement evaluation & fprop
-# TODO: Add image summary for output depth map
 
 
 
