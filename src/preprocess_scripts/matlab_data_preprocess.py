@@ -2,11 +2,10 @@
 # @Author: Tom Roussel
 # @Date:   2017-02-07 17:22:39
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-01 16:44:47
+# @Last Modified time: 2017-03-01 16:47:57
 
 import numpy as np
 import h5py
-import scipy.io as sio
 import util.util
 
 

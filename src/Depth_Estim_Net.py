@@ -2,7 +2,7 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-02-28 14:48:36
+# @Last Modified time: 2017-03-01 16:54:14
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -11,7 +11,7 @@ import numpy as np
 from math import floor
 
 # TODO: Implement evaluation & fprop
-
+# FIXME: Fix weight loading
 
 
 class Depth_Estim_Net(object):
@@ -134,10 +134,8 @@ class Depth_Estim_Net(object):
 		batchSize = self.config["batchSize"]
 		self.train(generator(rgb_in, depth_in, batchSize))
 
+	# FIXME: weights aren't loading from newest checkpoint
 	def load_weights(self, sess, checkpoint, saver, training = False):
-		# ckpt = tf.train.get_checkpoint_state(checkpoint)
-		# saver.recover_last_checkpoints(checkpoint)
-		# model = saver.last_checkpoints[-1]
 		model = self.checkpointFile + "-11"
 		print("Loading weights from checkpoint %s" % model)
 
@@ -174,7 +172,6 @@ class Depth_Estim_Net(object):
 		"""
 		# Define optimizer
 		optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.config["learnRate"])
-		# optimizer = tf.train.AdamOptimizer(learning_rate=self.config["learnRate"])
 		print("Building graph")
 		with tf.name_scope("Training"):
 			self.fullGraph = self.build_graph(training = True)
@@ -204,12 +201,11 @@ class Depth_Estim_Net(object):
 				sess.run(init_op)
 			print("Done, running training ops")
 			for in_rgb, in_depth in trainingData:
-				# import pdb; pdb.set_trace()
 
-				self.debug1(idT)
+				self.debug_pre_run(idT)
 				_, currentLoss, summary = sess.run([trainOp, self.loss, sumOp], feed_dict = {self.gtDepthPlaceholder:in_depth, self.inputGraph: in_rgb})
 				print("Current loss is: %1.3f" % currentLoss)
-				self.debug2(idT)
+				self.debug_post_run(idT)
 
 				sumWriter.add_summary(summary, idT)
 				idT += 1
@@ -232,28 +228,16 @@ class Depth_Estim_Net(object):
 		# Check if all parameters are present
 		return all([x in conf.keys() for x in parameters])
 
-	def debug1(self, idT):
+	def debug_pre_run(self, idT):
 		"""
 			Generic debug function, run every time before sess.run is called
 		"""
-		# fn = dbFile1 = "/users/visics/troussel/tmp/1.1"
-		# var_1 = [v for v in tf.all_variables() if v.name == "fully_connected_1/weights:0"][0]
-		# if idT == 0:
-		# 	with open(fn, 'w') as f:
-		# 		f.write(var_1.eval())
-		# print(var_1.eval())
 		return
 
-	def debug2(self, idT):
+	def debug_post_run(self, idT):
 		"""
 			Generic debug function, run every time after sess.run is called
 		"""
-		# fn = dbFile1 = "/users/visics/troussel/tmp/1.2"
-		# var_1 = [v for v in tf.all_variables() if v.name == "fully_connected_1/weights:0"][0]
-		# if idT == 10:
-		# 	with open(fn, 'w') as f:
-		# 		f.write(var_1.eval())
-		# print(var_1.eval())
 		return
 
 

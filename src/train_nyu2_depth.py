@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-02-07 16:14:25
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-02-28 10:07:46
+# @Last Modified time: 2017-03-01 16:50:59
 import numpy as np
 import argparse
 from Depth_Estim_Net import Depth_Estim_Net as DEN
@@ -36,7 +36,6 @@ def load_batch(batch, rgbFiles, labelFolder, config):
 	lastPath = None
 	for entry in batch:
 		name, matPath = entry.split(',')
-		# print(name)
 		# Get rgb file
 		num = int(os.path.split(matPath)[-1].split("_")[1])
 		match = "%s/imgs_%d/%s.jpeg" % (rgbFiles, num, name)
@@ -49,7 +48,6 @@ def load_batch(batch, rgbFiles, labelFolder, config):
 
 		depth[i,:,:] = mat["labels_processed"][:,:,mat["labels_name"].tolist().index(name)]
 		i += 1
-		# print("Index: %d" % i)
 
 	return rgb, depth
 
@@ -63,17 +61,10 @@ def train_data_generator(manifest, rootDataFolder, labelFolder, config):
 		batch = manifest[x*config["batchSize"]:(x+1)*config["batchSize"]]
 		# Sort batch
 		batch = sorted(batch, key= lambda batch: batch.split(',')[1])
-		# print (batch)
 		# Load data
-		# import time
-		# start = time.time()
 		print("Loading batch")
 		rgb, gtDepth = load_batch(batch, rootDataFolder, labelFolder, config) 
 		print("Batch loaded")
-
-		# print("Batch load time %f" % (end-start))
-		# Perform permutations [batches x H x W x c]
-
 		# yield data
 		yield rgb, gtDepth
 
@@ -94,8 +85,6 @@ def write_manifest(fn, labels):
 		fstring = "\n".join(labels)
 		f.write(fstring)
 
-
-# TODO
 def prepare_data(labelFolder, rootDataFolder, split, config, trainSetManifest, validateSetManifest=None, testSetManifest=None):
 	"""
 	"""

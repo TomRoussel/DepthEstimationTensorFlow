@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-02-07 16:14:25
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-02-23 13:16:38
+# @Last Modified time: 2017-03-01 16:51:25
 import numpy as np
 import argparse
 from Depth_Estim_Net import Depth_Estim_Net as DEN
@@ -39,8 +39,6 @@ def prepare_data(fn, batchSize, maxFraction = 1):
 	
 		rgb = np.transpose(rgb, (3,0,1,2)) 
 		depth = np.transpose(depth,(2,0,1)) 
-		# print("Depth shape: %d %d %d" % depth.shape)
-		# print("RGB shape: %d %d %d %d" % rgb.shape)
 		yield (rgb, depth)
 
 def safe_mkdir(dir):
