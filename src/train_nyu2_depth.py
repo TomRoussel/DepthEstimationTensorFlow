@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-02-07 16:14:25
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-01 16:50:59
+# @Last Modified time: 2017-03-01 17:37:36
 import numpy as np
 import argparse
 from Depth_Estim_Net import Depth_Estim_Net as DEN
@@ -24,7 +24,7 @@ configFile = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/co
 labelFolder = "/esat/emerald/pchakrav/StijnData/NYUv2/processed/labels_filled_proc/"
 rootData = "/esat/emerald/pchakrav/StijnData/NYUv2/processed/"
 
-rootFolder = "/usr/data/tmp/troussel/IROS/depth_estim/NYU/"
+rootFolder = "/esat/citrine/tmp/troussel/IROS/depth_estim/NYU/"
 summaryLoc = "%ssummary" % rootFolder
 weightsLoc = "%scheckpoint" % rootFolder
 
@@ -42,7 +42,7 @@ def load_batch(batch, rgbFiles, labelFolder, config):
 		rgb[i,:,:,:] = scipy.misc.imread(match, mode = "RGB")
 		# Get GT depth info
 		if not lastPath == matPath:
-		# Load new file
+			# Load new file
 			mat = loadmat(matPath)
 			lastPath = matPath
 

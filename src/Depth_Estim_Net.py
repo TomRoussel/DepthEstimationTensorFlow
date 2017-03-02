@@ -2,7 +2,7 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-01 16:54:14
+# @Last Modified time: 2017-03-02 10:59:23
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -11,8 +11,8 @@ import numpy as np
 from math import floor
 
 # TODO: Implement evaluation & fprop
-# FIXME: Fix weight loading
-
+# FIXME: Weight loading untested
+# FIXME: Periodic saving untested
 
 class Depth_Estim_Net(object):
 	def __init__(self, summaryLocation, weightsLoc, config=None, confFileName=None, training=True):
@@ -33,7 +33,7 @@ class Depth_Estim_Net(object):
 
 		self.summaryLocation = summaryLocation
 		self.weightsLoc = weightsLoc
-		self.checkpointFile = "%s/model.ckpt" % weightsLoc
+		# self.checkpointFile = "%s/model.ckpt" % weightsLoc
 
 	def parse_config(self, conf):
 		assert _check_conf_dictionary(conf), "Configuration is invalid, parameters are missing"
@@ -134,12 +134,11 @@ class Depth_Estim_Net(object):
 		batchSize = self.config["batchSize"]
 		self.train(generator(rgb_in, depth_in, batchSize))
 
-	# FIXME: weights aren't loading from newest checkpoint
-	def load_weights(self, sess, checkpoint, saver, training = False):
-		model = self.checkpointFile + "-11"
-		print("Loading weights from checkpoint %s" % model)
+	def load_weights(self, sess, checkpoint, saver):
+		newestWeights = tf.train.latest_checkpoint(checkpoint)
+		print("Loading weights from checkpoint %s" % newestWeights)
 
-		saver.restore(sess, model)
+		saver.restore(sess, newestWeights)
 
 	def add_image_summary(self, images, name, batches, isRGB, width = -1, height = -1, reshape = False):
 		# import pdb; pdb.set_trace()
@@ -178,7 +177,11 @@ class Depth_Estim_Net(object):
 			self.gtDepthPlaceholder = tf.placeholder(tf.float32, shape = [self.config["batchSize"], self.config["HOut"], self.config["WOut"]], name="depth_in")
 			self.loss = self.add_l2_loss(self.fullGraph, self.gtDepthPlaceholder)
 			
+			# Add summaries
 			self.summaries()
+			# Add global step variable
+			global_step = tf.Variable(0, name="global_step")
+			increment_global_step_op = tf.assign(global_step, global_step+1)
 
 			# Applying gradients
 			grads = optimizer.compute_gradients(self.loss)
@@ -202,15 +205,21 @@ class Depth_Estim_Net(object):
 			print("Done, running training ops")
 			for in_rgb, in_depth in trainingData:
 
-				self.debug_pre_run(idT)
-				_, currentLoss, summary = sess.run([trainOp, self.loss, sumOp], feed_dict = {self.gtDepthPlaceholder:in_depth, self.inputGraph: in_rgb})
+				self.debug_pre_run(global_step)
+				_, currentLoss, summary, step = sess.run([trainOp, self.loss, sumOp, increment_global_step_op], feed_dict = {self.gtDepthPlaceholder:in_depth, self.inputGraph: in_rgb})
 				print("Current loss is: %1.3f" % currentLoss)
-				self.debug_post_run(idT)
+				self.debug_post_run(global_step)
 
-				sumWriter.add_summary(summary, idT)
-				idT += 1
+				sumWriter.add_summary(summary, global_step)
 
-			saver.save(sess, self.checkpointFile, global_step=11)
+				# Save weights every x steps, where x is given in the config
+				if "saveInterval" in self.config.keys():
+					if step % self.config["saveInterval"] == 0:
+						saver.save(sess, self.checkpointFile, global_step=global_step)
+					
+			saver.save(sess, self.checkpointFile, global_step=global_step)
+
+
 
 	def add_l2_loss(self, inGraph, gtDepth):
 		flatDepth = tf.reshape(gtDepth, shape = (self.config["batchSize"], self.config["HOut"] * self.config["WOut"]))
@@ -220,13 +229,16 @@ class Depth_Estim_Net(object):
 		"""
 			Checks if the dictionary contains all the parameters (as keys) and returns true if they are all present.
 		"""
-		parameters = ["batchSize", "H", "W", "HOut", "WOut", "batchNormDecay", "maxPoolKernel", "maxPoolStride"
-						,"learnRate"]
+		# Contains every parameter that is required in the config
+		parameters_REQUIRED = ["batchSize", "H", "W", "HOut", "WOut", "batchNormDecay", "maxPoolKernel", "maxPoolStride"
+						,"learnRate"] 
+		parameters_OPTIONAL = ["saveInterval"]
+		parameters = parameters_REQUIRED + parameters_OPTIONAL
 
 		# Check for unknown parameters
 		assert not any([not x in parameters for x in conf.keys()]), "Unknown parameter given"
 		# Check if all parameters are present
-		return all([x in conf.keys() for x in parameters])
+		return all([x in conf.keys() for x in parameters_REQUIRED])
 
 	def debug_pre_run(self, idT):
 		"""
