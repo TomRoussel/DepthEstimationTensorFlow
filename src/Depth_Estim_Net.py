@@ -2,7 +2,7 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-02 10:59:23
+# @Last Modified time: 2017-03-02 11:03:32
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -46,8 +46,7 @@ class Depth_Estim_Net(object):
 		with open(fn, 'r') as fid:
 			conf = yaml.load(fid.read())
 		# import pdb; pdb.set_trace()
-		assert self._check_conf_dictionary(conf), "Configuration is invalid, parameters are missing"
-		self.config = conf
+		self.parse_config(conf)
 
 	def dump_config_file(self, fn):
 		"""
