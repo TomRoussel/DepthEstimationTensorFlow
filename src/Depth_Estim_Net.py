@@ -2,7 +2,7 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-02 11:03:32
+# @Last Modified time: 2017-03-02 17:13:32
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -36,7 +36,7 @@ class Depth_Estim_Net(object):
 		# self.checkpointFile = "%s/model.ckpt" % weightsLoc
 
 	def parse_config(self, conf):
-		assert _check_conf_dictionary(conf), "Configuration is invalid, parameters are missing"
+		assert self._check_conf_dictionary(conf), "Configuration is invalid, parameters are missing"
 		self.config = conf
 
 	def parse_config_from_file(self, fn):
@@ -209,14 +209,14 @@ class Depth_Estim_Net(object):
 				print("Current loss is: %1.3f" % currentLoss)
 				self.debug_post_run(global_step)
 
-				sumWriter.add_summary(summary, global_step)
+				sumWriter.add_summary(summary, step)
 
 				# Save weights every x steps, where x is given in the config
 				if "saveInterval" in self.config.keys():
 					if step % self.config["saveInterval"] == 0:
-						saver.save(sess, self.checkpointFile, global_step=global_step)
+						saver.save(sess, self.weightsLoc, global_step=step)
 					
-			saver.save(sess, self.checkpointFile, global_step=global_step)
+			saver.save(sess, self.weightsLoc, global_step=step)
 
 
 

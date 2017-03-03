@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-02-07 17:22:39
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-02 10:16:09
+# @Last Modified time: 2017-03-02 17:39:28
 
 import numpy as np
 import h5py
@@ -11,7 +11,7 @@ import util
 from glob import glob
 import os.path
 
-outPath = "/esat/citrine/tmp/troussel/IROS/kinect/NYU_data/NYU.hdf5"
+outPath = "/esat/citrine/tmp/troussel/IROS/kinect/NYU_data/NYU_lzif.hdf5"
 labelFolder = "/esat/emerald/pchakrav/StijnData/NYUv2/processed/labels_filled_proc/"
 
 def all_labels(labelFolder):
@@ -31,7 +31,7 @@ def main():
 	labels = all_labels(labelFolder)
 
 	f = h5py.File(outPath, 'w')
-	depth = f.create_group("depth").create_dataset("depth_data",(55, 74,len(labels)), compression="gzip", dtype=np.float64)
+	depth = f.create_group("depth").create_dataset("depth_data",(55, 74,len(labels)), compression="lzf", dtype=np.float64)
 	dt = h5py.special_dtype(vlen=bytes)
 	depth_label = f["depth"].create_dataset("depth_labels", [len(labels)], dtype=dt)
 	depth_mat_source = f["depth"].create_dataset("depth_folder_id", [len(labels)], dtype=np.uint16)
