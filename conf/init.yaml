@@ -7,4 +7,4 @@ batchNormDecay  : 0.9
 maxPoolKernel   : 2
 maxPoolStride   : 2
 learnRate       : 0.9
-saveInterval    : 500
+saveInterval    : 1000

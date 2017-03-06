@@ -5,9 +5,9 @@ from random import shuffle
 from math import floor
 
 inPath = "/esat/citrine/tmp/troussel/IROS/kinect/NYU_data/NYU_lzif.hdf5"
-trainPath = "/esat/citrine/tmp/troussel/IROS/kinect/NYU_data/NYU_train.hdf5"
-validatePath = "/esat/citrine/tmp/troussel/IROS/kinect/NYU_data/NYU_validate.hdf5"
-testPath = "/esat/citrine/tmp/troussel/IROS/kinect/NYU_data/NYU_test.hdf5"
+trainPath = "/esat/citrine/tmp/troussel/IROS/kinect/NYU_data/NYU_train2.hdf5"
+validatePath = "/esat/citrine/tmp/troussel/IROS/kinect/NYU_data/NYU_validate2.hdf5"
+testPath = "/esat/citrine/tmp/troussel/IROS/kinect/NYU_data/NYU_test2.hdf5"
 
 split = (0.7,0.15,0.15)
 
@@ -54,7 +54,7 @@ def main():
 	fValidate = h5py.File(validatePath, 'w')
 
 	print("Writing training file")
-	write_new_file(f, fTrain, trainIndexes, 2000)
+	write_new_file(f, fTrain, trainIndexes, 20)
 	print("Writing testing file")
 	write_new_file(f, fTest, testIndexes, 2000)
 	print("Writing validation file")

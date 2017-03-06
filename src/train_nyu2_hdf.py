@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-02-07 16:14:25
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-03 13:40:01
+# @Last Modified time: 2017-03-03 15:05:44
 import numpy as np
 import argparse
 from Depth_Estim_Net import Depth_Estim_Net as DEN
@@ -23,10 +23,10 @@ testSetManifest = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_est
 
 configFile = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/conf/init.yaml"
 
-depthFile = "/esat/citrine/tmp/troussel/IROS/kinect/NYU_data/NYU_train.hdf5"
+depthFile = "/esat/citrine/tmp/troussel/IROS/kinect/NYU_data/NYU_train2.hdf5"
 rootData = "/esat/emerald/pchakrav/StijnData/NYUv2/processed/"
 
-rootFolder = "/esat/citrine/tmp/troussel/IROS/depth_estim/NYU_2/"
+rootFolder = "/esat/citrine/tmp/troussel/IROS/depth_estim/NYU_proper_random/"
 summaryLoc = "%ssummary" % rootFolder
 weightsLoc = "%scheckpoint/" % rootFolder
 
