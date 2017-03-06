@@ -2,7 +2,7 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-02 17:13:32
+# @Last Modified time: 2017-03-06 10:55:29
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -11,8 +11,6 @@ import numpy as np
 from math import floor
 
 # TODO: Implement evaluation & fprop
-# FIXME: Weight loading untested
-# FIXME: Periodic saving untested
 
 class Depth_Estim_Net(object):
 	def __init__(self, summaryLocation, weightsLoc, config=None, confFileName=None, training=True):
