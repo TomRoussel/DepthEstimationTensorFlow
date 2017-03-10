@@ -2,10 +2,10 @@
 # @Author: Tom Roussel
 # @Date:   2017-02-07 16:14:25
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-01 16:51:25
+# @Last Modified time: 2017-03-09 16:08:37
+from Depth_Estim_Net import Depth_Estim_Net as DEN
 import numpy as np
 import argparse
-from Depth_Estim_Net import Depth_Estim_Net as DEN
 import h5py
 from math import floor
 
@@ -63,7 +63,7 @@ def main():
 	# Make network
 	prepare_dir(summaryLoc, weightsLoc)
 	print("Loading network configuration")
-	network = DEN(summaryLoc, weightsLoc, confFileName = configFile, training = True)
+	network = DEN(weightsLoc, summaryLoc, confFileName = configFile, training = True)
 	# Prepare training data
 	print("Preparing data")
 	dataGenerator = prepare_data(dataFn, network.config["batchSize"], maxFraction = 0.8)

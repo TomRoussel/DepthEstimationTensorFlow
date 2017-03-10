@@ -2,3 +2,5 @@
 src/*.pyc
 1.hdf5
 NYU2Split
+*sublime-workspace
+*.sublime-project

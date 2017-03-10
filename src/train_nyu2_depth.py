@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-02-07 16:14:25
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-01 17:37:36
+# @Last Modified time: 2017-03-09 16:08:52
 import numpy as np
 import argparse
 from Depth_Estim_Net import Depth_Estim_Net as DEN
@@ -140,7 +140,7 @@ def main():
 	# Make network
 	prepare_dir(summaryLoc, weightsLoc)
 	print("Loading network configuration")
-	network = DEN(summaryLoc, weightsLoc, confFileName = configFile, training = True)
+	network = DEN(weightsLoc, summaryLoc, confFileName = configFile, training = True)
 	# Prepare training data
 	print("Preparing data")
 	dataGenerator = prepare_data(labelFolder, rootData, (0.7,0.15,0.15), network.config, trainSetManifest, validateSetManifest, testSetManifest)

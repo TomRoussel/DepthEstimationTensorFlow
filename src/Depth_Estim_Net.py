@@ -2,7 +2,7 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-06 10:55:29
+# @Last Modified time: 2017-03-09 17:20:19
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -13,13 +13,12 @@ from math import floor
 # TODO: Implement evaluation & fprop
 
 class Depth_Estim_Net(object):
-	def __init__(self, summaryLocation, weightsLoc, config=None, confFileName=None, training=True):
+	def __init__(self, weightsLoc, summaryLocation = None, config=None, confFileName=None, training=True):
 		"""
 			@config: 		A dictionary containing all the parameters for the network. Will throw an exception if there are parameters missing.
 			@confFileName: 	Path to a yaml file containing the parameters of the network. Only this parameter or the config parameter can
 							be set, not both.
 			@training: 		Set this to true of the network is to be trained
-			
 		"""
 		assert config is None or confFileName is None, "Both config and confFileName parameters are set, set one or the other."
 		assert config is not None or confFileName is not None, "No configuration specified"
@@ -67,7 +66,7 @@ class Depth_Estim_Net(object):
 		"""
 		# Decay?
 		# Other parameters?
-		graphTail = batch_norm(inputs = inGraph, decay = self.config["batchNormDecay"], is_training = training)
+		graphTail = batch_norm(inputs = inGraph, decay = self.config["batchNormDecay"], is_training = training, updates_collections = None)
 
 		if maxPool:
 			# padding?
@@ -85,27 +84,18 @@ class Depth_Estim_Net(object):
 		with tf.name_scope("Convolution_layers"):
 			# Several layers convolution layers
 			graphTail = self.conv_layer(self.inputGraph, outChannels = 96, kernelSize = 11, stride = 4)
-			print(graphTail)
 			graphTail = self.in_between_layers(graphTail, training = training)
-			print(graphTail)
 
 			graphTail = self.conv_layer(graphTail, outChannels = 256, kernelSize = 5)
-			print(graphTail)
 			graphTail = self.in_between_layers(graphTail, training = training)
-			print(graphTail)
 
 			graphTail = self.conv_layer(graphTail, outChannels = 384, kernelSize = 3)
-			print(graphTail)
 			graphTail = self.in_between_layers(graphTail, maxPool = False, training = training)
-			print(graphTail)
 			
 			graphTail = self.conv_layer(graphTail, outChannels = 384, kernelSize = 3, stride=2)
-			print(graphTail)
 			graphTail = self.in_between_layers(graphTail, maxPool = False, training = training)
-			print(graphTail)
 
 			graphTail = self.conv_layer(graphTail, outChannels = 256, kernelSize = 3)
-			print(graphTail)
 
 		# Output layers
 		with tf.name_scope("Fully_connected"):
@@ -153,6 +143,8 @@ class Depth_Estim_Net(object):
 		# Images
 		self.add_image_summary(self.fullGraph, "Depth Estimation", 3, False, width = self.config["WOut"], height = self.config["HOut"], reshape = True)
 		self.add_image_summary(self.inputGraph, "RGB", 3, True)		
+
+ 		tf.summary.histogram("Depth", self.fullGraph)
 		if training:
 			self.add_image_summary(tf.reshape(self.gtDepthPlaceholder, [-1, self.config["HOut"], self.config["WOut"], 1]), "GT", 3, False)
 
@@ -189,7 +181,8 @@ class Depth_Estim_Net(object):
 		print("Starting tensorflow session")
 		for key in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES): print(key)
 		with tf.Session() as sess:
-			sumWriter = tf.summary.FileWriter(self.summaryLocation, graph=sess.graph)
+			if not self.summaryLocation is None:
+				sumWriter = tf.summary.FileWriter(self.summaryLocation, graph=sess.graph)
 			saver = tf.train.Saver()
 			idT = 0
 			
@@ -207,7 +200,8 @@ class Depth_Estim_Net(object):
 				print("Current loss is: %1.3f" % currentLoss)
 				self.debug_post_run(global_step)
 
-				sumWriter.add_summary(summary, step)
+				if not self.summaryLocation is None:
+					sumWriter.add_summary(summary, step)
 
 				# Save weights every x steps, where x is given in the config
 				if "saveInterval" in self.config.keys():
@@ -216,7 +210,21 @@ class Depth_Estim_Net(object):
 					
 			saver.save(sess, self.weightsLoc, global_step=step)
 
+	def fprop(self, inData):
+		"""
+			Simple forward propagation. inData is formated like this: [images x H x W x C]
+			Returns depth maps in the same way
+		"""
+		self.fullGraph = self.build_graph(training = False)
 
+		with tf.Session() as sess:
+			saver = tf.train.Saver()
+
+			self.load_weights(sess, self.weightsLoc, saver)
+
+			out = sess.run(self.fullGraph, feed_dict = {self.inputGraph : inData})
+
+		return out
 
 	def add_l2_loss(self, inGraph, gtDepth):
 		flatDepth = tf.reshape(gtDepth, shape = (self.config["batchSize"], self.config["HOut"] * self.config["WOut"]))
