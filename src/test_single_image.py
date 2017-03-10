@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-09 16:04:29
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-09 16:47:53
+# @Last Modified time: 2017-03-10 10:56:55
 from Depth_Estim_Net import Depth_Estim_Net as DEN
 import numpy as np
 import PIL.Image as Im
@@ -25,8 +25,9 @@ def main():
 	inIm = np.reshape(inIm, (1, inIm.shape[0], inIm.shape[1], inIm.shape[2]))
 	# Remove last channel (not used)
 	inIm = inIm[:,:,:,0:3]
+
 	# Load Network
-	net = DEN(weightsLoc, confFileName = config, training = False)
+	net = DEN(weightsLoc, summaryLocation = "/users/visics/troussel/tmp/sum/", confFileName = config, training = False)
 	net.config["batchSize"] = 1
 	# Frop
 	depth = net.fprop(inIm)

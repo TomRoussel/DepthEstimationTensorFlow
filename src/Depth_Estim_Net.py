@@ -2,7 +2,7 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-10 10:00:30
+# @Last Modified time: 2017-03-10 11:07:47
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -30,7 +30,6 @@ class Depth_Estim_Net(object):
 
 		self.summaryLocation = summaryLocation
 		self.weightsLoc = weightsLoc
-		# self.checkpointFile = "%s/model.ckpt" % weightsLoc
 		self.sess = None # Session when fpropping
 
 	def parse_config(self, conf):
@@ -142,8 +141,9 @@ class Depth_Estim_Net(object):
 
 	def summaries(self, training = True):
 		# Images
-		self.add_image_summary(self.fullGraph, "Depth Estimation", 3, False, width = self.config["WOut"], height = self.config["HOut"], reshape = True)
-		self.add_image_summary(self.inputGraph, "RGB", 3, True)		
+		sumImageAmount = 3 if self.config["batchSize"] >= 3 else self.config["batchSize"]
+		self.add_image_summary(self.fullGraph, "Depth Estimation", sumImageAmount, False, width = self.config["WOut"], height = self.config["HOut"], reshape = True)
+		self.add_image_summary(self.inputGraph, "RGB", sumImageAmount, True)		
 
  		tf.summary.histogram("Depth", self.fullGraph)
 		if training:
@@ -216,15 +216,23 @@ class Depth_Estim_Net(object):
 			Simple forward propagation. inData is formated like this: [images x H x W x C]
 			Returns depth maps in the same way
 		"""
-		
 		if self.sess is None:
 			# Initialize everything
 			self.fullGraph = self.build_graph(training = False)
+			self.summaries(training = False)
+			sumOp = tf.summary.merge_all()
+
 			self.sess = tf.Session()
 			saver = tf.train.Saver()
-			self.load_weights(sess, self.weightsLoc, saver)
+			self.load_weights(self.sess, self.weightsLoc, saver)
 
-		out = sess.run(self.fullGraph, feed_dict = {self.inputGraph : inData})
+		if not self.summaryLocation is None:
+			sumWriter = tf.summary.FileWriter(self.summaryLocation, graph=self.sess.graph)
+
+		(out, summary) = self.sess.run([self.fullGraph, sumOp], feed_dict = {self.inputGraph : inData})
+
+		if not self.summaryLocation is None:
+			sumWriter.add_summary(summary, 0)
 
 		return out
 
