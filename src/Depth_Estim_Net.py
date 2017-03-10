@@ -2,7 +2,7 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-09 17:20:19
+# @Last Modified time: 2017-03-10 10:00:30
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -31,6 +31,7 @@ class Depth_Estim_Net(object):
 		self.summaryLocation = summaryLocation
 		self.weightsLoc = weightsLoc
 		# self.checkpointFile = "%s/model.ckpt" % weightsLoc
+		self.sess = None # Session when fpropping
 
 	def parse_config(self, conf):
 		assert self._check_conf_dictionary(conf), "Configuration is invalid, parameters are missing"
@@ -215,14 +216,15 @@ class Depth_Estim_Net(object):
 			Simple forward propagation. inData is formated like this: [images x H x W x C]
 			Returns depth maps in the same way
 		"""
-		self.fullGraph = self.build_graph(training = False)
-
-		with tf.Session() as sess:
+		
+		if self.sess is None:
+			# Initialize everything
+			self.fullGraph = self.build_graph(training = False)
+			self.sess = tf.Session()
 			saver = tf.train.Saver()
-
 			self.load_weights(sess, self.weightsLoc, saver)
 
-			out = sess.run(self.fullGraph, feed_dict = {self.inputGraph : inData})
+		out = sess.run(self.fullGraph, feed_dict = {self.inputGraph : inData})
 
 		return out
 
