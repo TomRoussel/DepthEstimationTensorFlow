@@ -13,7 +13,7 @@ imLoc = "/esat/citrine/tmp/troussel/IROS/kinect/Kinect2/kinData/office4/RGB/0001
 
 config = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/conf/init.yaml"
 
-rootFolder = "/esat/citrine/tmp/troussel/IROS/depth_estim/NYU_proper_random/"
+rootFolder = "/esat/citrine/tmp/troussel/IROS/depth_estim/NYU_BN_scope/" 
 weightsLoc = "%scheckpoint/" % rootFolder
 
 

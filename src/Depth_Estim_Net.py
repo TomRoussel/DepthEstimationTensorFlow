@@ -2,7 +2,7 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-10 11:07:47
+# @Last Modified time: 2017-03-13 11:15:31
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -59,20 +59,21 @@ class Depth_Estim_Net(object):
 		# weights initialization
 		return convolution2d(inputs = inGraph, num_outputs = outChannels, kernel_size = kernelSize, padding='VALID', stride=stride)
 
-	def in_between_layers(self, inGraph, training, maxPool = True):
+	def in_between_layers(self, inGraph, training, maxPool = True, scopeN ='inbetw'):
 		"""
 			This adds all the layers usually between the convolutions
 			Batch norm, max pool, ...
 		"""
 		# Decay?
 		# Other parameters?
-		graphTail = batch_norm(inputs = inGraph, decay = self.config["batchNormDecay"], is_training = training, updates_collections = None)
+		with tf.variable_scope(scopeN) as scope:
+			graphTail = batch_norm(inputs = inGraph, decay = self.config["batchNormDecay"], is_training = training, reuse = not training ,updates_collections = None, scope = scope)
 
-		if maxPool:
-			# padding?
-			graphTail = max_pool2d(inputs = graphTail, kernel_size = self.config["maxPoolKernel"], stride = self.config["maxPoolStride"], padding = "VALID")
+			if maxPool:
+				# padding?
+				graphTail = max_pool2d(inputs = graphTail, kernel_size = self.config["maxPoolKernel"], stride = self.config["maxPoolStride"], padding = "VALID")
 
-		graphTail = tf.nn.relu(graphTail)
+			graphTail = tf.nn.relu(graphTail)
 		return graphTail
 
 	def build_graph(self, training):
@@ -84,16 +85,16 @@ class Depth_Estim_Net(object):
 		with tf.name_scope("Convolution_layers"):
 			# Several layers convolution layers
 			graphTail = self.conv_layer(self.inputGraph, outChannels = 96, kernelSize = 11, stride = 4)
-			graphTail = self.in_between_layers(graphTail, training = training)
+			graphTail = self.in_between_layers(graphTail, training = training, scopeN = "NormMaxRelu1")
 
 			graphTail = self.conv_layer(graphTail, outChannels = 256, kernelSize = 5)
-			graphTail = self.in_between_layers(graphTail, training = training)
+			graphTail = self.in_between_layers(graphTail, training = training, scopeN = "NormMaxRelu2")
 
 			graphTail = self.conv_layer(graphTail, outChannels = 384, kernelSize = 3)
-			graphTail = self.in_between_layers(graphTail, maxPool = False, training = training)
+			graphTail = self.in_between_layers(graphTail, maxPool = False, training = training, scopeN = "NormRelu1")
 			
 			graphTail = self.conv_layer(graphTail, outChannels = 384, kernelSize = 3, stride=2)
-			graphTail = self.in_between_layers(graphTail, maxPool = False, training = training)
+			graphTail = self.in_between_layers(graphTail, maxPool = False, training = training, scopeN = "NormRelu2")
 
 			graphTail = self.conv_layer(graphTail, outChannels = 256, kernelSize = 3)
 
