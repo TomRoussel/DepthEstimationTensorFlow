@@ -2,18 +2,13 @@
 # @Author: Tom Roussel
 # @Date:   2017-02-07 16:14:25
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-13 11:15:48
+# @Last Modified time: 2017-03-14 10:46:25
 import numpy as np
 import argparse
 from Depth_Estim_Net import Depth_Estim_Net as DEN
 from util.util import loadmat
-from math import floor
-from glob import glob
-from random import shuffle
-import os.path
-import scipy.misc
+import util.NYU_Data as NYU_Data
 import h5py
-from time import time
 
 # TODO: Make argument parser
 
@@ -30,49 +25,6 @@ rootFolder = "/esat/citrine/tmp/troussel/IROS/depth_estim/NYU_BN_scope/"
 summaryLoc = "%ssummary" % rootFolder
 weightsLoc = "%scheckpoint/" % rootFolder
 
-def load_batch(batch, hdfFile, rgbFiles, config):
-	rgb = np.ones((config["batchSize"],config["H"],config["W"], 3))
-	depth = np.ones((config["batchSize"],config["HOut"],config["WOut"]))
-
-	i = 0
-	lastPath = None
-	start1 = time()
-	for entry in batch:
-		# Get rgb file
-		num = hdfFile["depth"]["depth_folder_id"][int(entry)]
-		name = hdfFile["depth"]["depth_labels"][int(entry)]
-		match = "%s/imgs_%d/%s.jpeg" % (rgbFiles, num, name)
-		rgb[i,:,:,:] = scipy.misc.imread(match, mode = "RGB")
-		start4 = end3 = time()
-		# Get GT depth info
-		start5 = end4 = time()
-		end4 = time()
-
-		i += 1
-		# print("Reading ID: %f, reading label: %f, reading image: %f, reading depth: %f" % (end1-start1,end2-start2,end3-start3,end4-start4))
-
-	start2 = end1 = time()
-	depth[:,:,:] = np.swapaxes(np.swapaxes(hdfFile["depth"]["depth_data"][:,:,sorted([int(x) for x in batch])],0,2),1,2)
-	end2 = time()
-	print("Reading RGB data: %f reading depth: %f" % (end1-start1,end2-start2))
-	return rgb, depth
-
-def train_data_generator(rootDataFolder, hdfFile, config):
-	# Split manifest in batches
-	batchAm = int(floor(hdfFile["depth"]["depth_labels"].shape[0]/config["batchSize"]))
-	indexes = range(hdfFile["depth"]["depth_labels"].shape[0])
-	# Loop over batches
-	print("Looping over %d batches" % batchAm)
-	for x in xrange(batchAm):
-		# Get Batch
-		batch = indexes[x*config["batchSize"]:(x+1)*config["batchSize"]]
-		# Load data
-		print("Loading batch %d" % x)
-		rgb, gtDepth = load_batch(batch, hdfFile, rootDataFolder, config) 
-		print("Batch loaded")
-		# yield data
-		yield rgb, gtDepth
-
 def prepare_data(depthFile, rootDataFolder, config):
 	"""
 	"""
@@ -81,7 +33,7 @@ def prepare_data(depthFile, rootDataFolder, config):
 
 	# Prepare generator with training split
 	print("Preparing data generator")
-	return train_data_generator(rootDataFolder, hdfF, config)
+	return NYU_Data.train_data_generator(rootDataFolder, hdfF, config)
 
 
 def safe_mkdir(dir):
@@ -112,7 +64,7 @@ def main():
 	dataGenerator = prepare_data(depthFile, rootData, network.config)
 	# Train network
 	print("Starting training")
-	network.train(dataGenerator, loadChkpt = False)
+	network.train(dataGenerator, loadChkpt = True)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
