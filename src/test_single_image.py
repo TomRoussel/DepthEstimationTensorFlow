@@ -9,7 +9,7 @@ import PIL.Image as Im
 import matplotlib.pyplot as plt
 from scipy.misc import imresize
 
-imLoc = "/esat/citrine/tmp/troussel/IROS/kinect/Kinect2/kinData/office4/RGB/000168.png"
+imLoc = "/esat/citrine/tmp/troussel/IROS/kinect/Kinect2/kinData/office4/RGB/000178.png"
 
 config = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/conf/init.yaml"
 

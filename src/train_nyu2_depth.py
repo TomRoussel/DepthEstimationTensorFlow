@@ -2,11 +2,11 @@
 # @Author: Tom Roussel
 # @Date:   2017-02-07 16:14:25
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-09 16:08:52
+# @Last Modified time: 2017-03-14 11:14:35
 import numpy as np
 import argparse
 from Depth_Estim_Net import Depth_Estim_Net as DEN
-from util.util import loadmat
+from util.util import loadmat, safe_mkdir
 from math import floor
 from glob import glob
 from random import shuffle
@@ -116,20 +116,6 @@ def prepare_data(labelFolder, rootDataFolder, split, config, trainSetManifest, v
 	# Prepare generator with training split
 	print("Preparing data generator")
 	return train_data_generator(trainSet, rootDataFolder, labelFolder, config)
-
-
-def safe_mkdir(dir):
-	"""
-		Makes directory but does not throw exception when it already exists
-	"""
-	import os
-	try:
-		os.mkdir(dir)
-	except OSError as e:
-		if e[0] == 17: #Dir already exists
-			return
-		else:
-			raise e
 
 def prepare_dir(summaryLoc, weightsLoc):
 	safe_mkdir(rootFolder)

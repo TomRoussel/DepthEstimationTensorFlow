@@ -2,12 +2,13 @@
 # @Author: Tom Roussel
 # @Date:   2017-02-07 16:14:25
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-09 16:08:37
+# @Last Modified time: 2017-03-14 11:14:59
 from Depth_Estim_Net import Depth_Estim_Net as DEN
 import numpy as np
 import argparse
 import h5py
 from math import floor
+from util.util import safe_mkdir
 
 # TODO: Make argument parser
 
@@ -40,19 +41,6 @@ def prepare_data(fn, batchSize, maxFraction = 1):
 		rgb = np.transpose(rgb, (3,0,1,2)) 
 		depth = np.transpose(depth,(2,0,1)) 
 		yield (rgb, depth)
-
-def safe_mkdir(dir):
-	"""
-		Makes directory but does not throw exception when it already exists
-	"""
-	import os
-	try:
-		os.mkdir(dir)
-	except OSError as e:
-		if e[0] == 17: #Dir already exists
-			return
-		else:
-			raise e
 
 def prepare_dir(summaryLoc, weightsLoc):
 	safe_mkdir(rootFolder)

@@ -2,11 +2,11 @@
 # @Author: Tom Roussel
 # @Date:   2017-02-07 16:14:25
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-14 10:46:25
+# @Last Modified time: 2017-03-14 11:14:21
 import numpy as np
 import argparse
 from Depth_Estim_Net import Depth_Estim_Net as DEN
-from util.util import loadmat
+from util.util import loadmat, safe_mkdir
 import util.NYU_Data as NYU_Data
 import h5py
 
@@ -21,7 +21,7 @@ configFile = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/co
 depthFile = "/esat/citrine/tmp/troussel/IROS/kinect/NYU_data/NYU_train2.hdf5"
 rootData = "/esat/emerald/pchakrav/StijnData/NYUv2/processed/"
 
-rootFolder = "/esat/citrine/tmp/troussel/IROS/depth_estim/NYU_BN_scope/"
+rootFolder = "/esat/citrine/tmp/troussel/IROS/depth_estim/rubbish/"
 summaryLoc = "%ssummary" % rootFolder
 weightsLoc = "%scheckpoint/" % rootFolder
 
@@ -33,21 +33,7 @@ def prepare_data(depthFile, rootDataFolder, config):
 
 	# Prepare generator with training split
 	print("Preparing data generator")
-	return NYU_Data.train_data_generator(rootDataFolder, hdfF, config)
-
-
-def safe_mkdir(dir):
-	"""
-		Makes directory but does not throw exception when it already exists
-	"""
-	import os
-	try:
-		os.mkdir(dir)
-	except OSError as e:
-		if e[0] == 17: #Dir already exists
-			return
-		else:
-			raise e
+	return NYU_Data.NYU_Data(rootDataFolder, hdfF, config)
 
 def prepare_dir(summaryLoc, weightsLoc):
 	safe_mkdir(rootFolder)
@@ -64,7 +50,7 @@ def main():
 	dataGenerator = prepare_data(depthFile, rootData, network.config)
 	# Train network
 	print("Starting training")
-	network.train(dataGenerator, loadChkpt = True)
+	network.train(dataGenerator, loadChkpt = False)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()

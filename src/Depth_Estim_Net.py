@@ -2,7 +2,7 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-13 11:15:31
+# @Last Modified time: 2017-03-16 11:03:29
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -31,6 +31,7 @@ class Depth_Estim_Net(object):
 		self.summaryLocation = summaryLocation
 		self.weightsLoc = weightsLoc
 		self.sess = None # Session when fpropping
+		self.sumWriter = None
 
 	def parse_config(self, conf):
 		assert self._check_conf_dictionary(conf), "Configuration is invalid, parameters are missing"
@@ -184,7 +185,7 @@ class Depth_Estim_Net(object):
 		for key in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES): print(key)
 		with tf.Session() as sess:
 			if not self.summaryLocation is None:
-				sumWriter = tf.summary.FileWriter(self.summaryLocation, graph=sess.graph)
+				self.sumWriter = tf.summary.FileWriter(self.summaryLocation, graph=sess.graph)
 			saver = tf.train.Saver()
 			idT = 0
 			
@@ -203,7 +204,7 @@ class Depth_Estim_Net(object):
 				self.debug_post_run(global_step)
 
 				if not self.summaryLocation is None:
-					sumWriter.add_summary(summary, step)
+					self.sumWriter.add_summary(summary, step)
 
 				# Save weights every x steps, where x is given in the config
 				if "saveInterval" in self.config.keys():
@@ -221,19 +222,19 @@ class Depth_Estim_Net(object):
 			# Initialize everything
 			self.fullGraph = self.build_graph(training = False)
 			self.summaries(training = False)
-			sumOp = tf.summary.merge_all()
+			self.sumOp = tf.summary.merge_all()
 
 			self.sess = tf.Session()
 			saver = tf.train.Saver()
 			self.load_weights(self.sess, self.weightsLoc, saver)
 
-		if not self.summaryLocation is None:
-			sumWriter = tf.summary.FileWriter(self.summaryLocation, graph=self.sess.graph)
+		if not self.summaryLocation is None and self.sumWriter is None:
+			self.sumWriter = tf.summary.FileWriter(self.summaryLocation, graph=self.sess.graph)
 
-		(out, summary) = self.sess.run([self.fullGraph, sumOp], feed_dict = {self.inputGraph : inData})
+		(out, summary) = self.sess.run([self.fullGraph, self.sumOp], feed_dict = {self.inputGraph : inData})
 
-		if not self.summaryLocation is None:
-			sumWriter.add_summary(summary, 0)
+		if not self.sumWriter is None:
+			self.sumWriter.add_summary(summary, 0)
 
 		return out
 
