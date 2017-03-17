@@ -3,7 +3,6 @@ from time import time
 import scipy.misc
 from math import floor
 import PIL.Image as im
-import pdb
 
 class NYU_Data(object):
 	"""
@@ -14,7 +13,7 @@ class NYU_Data(object):
 		self.rootDataFolder = rootDataFolder
 		self.hdfFile = hdfFile
 		self.config = config
-		self.batchAm = int(floor(hdfFile["depth"]["depth_labels"].shape[0]/config["batchSize"]))
+		self.batchAm = int(floor(self.hdfFile["depth"]["depth_labels"].shape[0]/config["batchSize"]))
 
 		print("File contains %d batches using a batchsize of %d" % (self.batchAm, self.config["batchSize"]))		
 
@@ -37,7 +36,6 @@ class NYU_Data(object):
 		depth = np.ones((self.config["batchSize"],self.config["HOut"],self.config["WOut"]))
 
 		i = 0
-		lastPath = None
 		start1 = time()
 		for entry in batch:
             # Get rgb file

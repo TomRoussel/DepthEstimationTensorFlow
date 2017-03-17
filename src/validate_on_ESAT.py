@@ -2,16 +2,15 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-09 16:04:29
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-16 16:31:49
+# @Last Modified time: 2017-03-16 16:31:40
 from Depth_Estim_Net import Depth_Estim_Net as DEN
 import numpy as np
-from util.NYU_Data import NYU_Data
+from util.ESAT_Data import ESAT_Data
 import matplotlib.pyplot as plt
 import h5py
 
 config = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/conf/init.yaml"
-depthFile = "/esat/citrine/tmp/troussel/IROS/kinect/NYU_data/NYU_train2.hdf5"
-rootData = "/esat/emerald/pchakrav/StijnData/NYUv2/processed/"
+dataFn = "/esat/citrine/tmp/troussel/IROS/kinect/StijnKinectDataNP/1.hdf5" 
 
 rootFolder = "/esat/citrine/tmp/troussel/IROS/depth_estim/NYU_BN_scope/" 
 weightsLoc = "%scheckpoint/" % rootFolder
@@ -23,11 +22,8 @@ def main():
 	net = DEN(weightsLoc, summaryLocation = "/users/visics/troussel/tmp/sum/", confFileName = config, training = False)
 	net.config["batchSize"] =  128
 
-	# Open validation data
-	hdfF = h5py.File(depthFile, 'r')
-
 	# Construct data loader
-	data = NYU_Data(rootData, hdfF, net.config)
+	data = ESAT_Data(dataFn, net.config)
 
 	rmseList = []
 	validCount = 0
