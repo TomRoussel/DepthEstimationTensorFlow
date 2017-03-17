@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 13:59:42
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-17 17:19:33
+# @Last Modified time: 2017-03-17 18:03:19
 
 import tensorflow as tf
 import numpy as np
@@ -31,14 +31,16 @@ def warp_using_coords(inGray, omega_dn):
 	"""
 	return None
 
-def warp_graph(depthFlat, inGray, poseM, shape):
+def warp_graph(depthFlat, inGray, poseM, shape, batchSize):
 	"""
 		poseM: shape = [batch x 4 x 4]
 	"""
-	imageShapeTensor = tf.constant(shape) # TODO: See if necessary
 	pixelAmount = shape[0] * shape[1]
 	flat = lambda y: lambda x: shape[1]*y + x #Translates y,x to single index
 	expand = lambda z: (z//shape[1],z % shape[1]) # Reverses previous operation
+
+	# Add small value to prevent division by zero later on
+	depthFlat += 1e-9
 
 	# Generate pixel points
 	pp = np.stack(expand(np.arange(pixelAmount)), axis=1)
@@ -46,20 +48,24 @@ def warp_graph(depthFlat, inGray, poseM, shape):
 	# Normalize pixel points
 	ppNorm = normalize_image_points(pp, image.shape)
 	# Convert to tensorflow
-	ppNormTensor = tf.constant(ppNorm)
-	# FIXME: Have a think to see if this still works in batches
-	# TODO: See if it's possible to convert to einsum
-	positionV = tf.stack([ppNorm[:,1]*inGraph, ppNorm[:,0]*inGraph, inGraph, tf.ones(pixelAmount)], axis = 0)
+	ppNormTensor = tf.concat([tf.constant(ppNorm), tf.ones((batchSize, 1, pixelAmount))], axis = 1)
+
+	# Multiply by depth values
+	positionV = tf.einsum('abk,ak->abk', ppNormTensor, depthFlat)
+	# Add row of ones
+	positionV = tf.concat([positionV, tf.ones((batchSize, 1, pixelAmount))], axis = 1)
+
 	# Use tf.einsum for batch matmul
 	projectedPoints = tf.einsum('aij,ajk->aik', poseM, positionV)
-	# FIXME: Won't work in batches
-	omega = np.stack([projectedPoints[1]/projectedPoints[2], projectedPoints[0]/projectedPoints[2]], axis = 0)
 
-	# keep track of what will be out of bounds in the image
+	omega = tf.stack([projectedPoints[:,1,:]/projectedPoints[:,2,:], projectedPoints[:,0,:]/projectedPoints[:,2,:]], axis = 1)
+
+	# Keep track of what will be out of bounds in the image
 	# Temporary variable of shape [batch x 2 x pixels]. Second axis denotes x and y positions, if either are out of bounds the pixel is as well
 	oobPixels2D = tf.logical_or(omega > 1, omega < -1) 
 	oobPixels = tf.logical_or(oobPixels2D[:,0,:], oobPixels2D[:,1,:])
 
-	omega_dn = tf.round(denormalize_image_points(omega, imageShapeTensor))
+	omega_dn = tf.round(denormalize_image_points(omega, tf.constant(shape)))
 
-	warped = warp_using_coords(inGray, omega_dn)
+	warpedFlat = warp_using_coords(inGray, omega_dn, oobPixels)
+	return warpedFlat
