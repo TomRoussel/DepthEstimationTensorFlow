@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 13:59:42
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-20 10:08:49
+# @Last Modified time: 2017-03-20 10:34:06
 
 import tensorflow as tf
 import numpy as np
@@ -45,7 +45,6 @@ def warp_graph(depthFlat, inGray, poseM, shape, batchSize):
 		poseM: shape = [batch x 4 x 4]
 	"""
 	pixelAmount = shape[0] * shape[1]
-	flat = lambda y: lambda x: shape[1]*y + x #Translates y,x to single index
 	expand = lambda z: (z//shape[1],z % shape[1]) # Reverses previous operation
 
 	# Add small value to prevent division by zero later on

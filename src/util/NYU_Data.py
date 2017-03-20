@@ -3,15 +3,16 @@ from time import time
 import scipy.misc
 from math import floor
 import PIL.Image as im
+import h5py
 
 class NYU_Data(object):
 	"""
 		Object that handles loading NYU data from an HDF file
 		Is iterable
 	"""
-	def __init__(self, rootDataFolder, hdfFile, config):
+	def __init__(self, rootDataFolder, hdfFn, config):
 		self.rootDataFolder = rootDataFolder
-		self.hdfFile = hdfFile
+		self.hdfFile = h5py.File(hdfFn, 'r')
 		self.config = config
 		self.batchAm = int(floor(self.hdfFile["depth"]["depth_labels"].shape[0]/config["batchSize"]))
 
