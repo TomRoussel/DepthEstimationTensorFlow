@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 13:59:42
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-17 19:24:24
+# @Last Modified time: 2017-03-20 10:08:49
 
 import tensorflow as tf
 import numpy as np
@@ -24,18 +24,20 @@ def denormalize_image_points(coords, image_shape):
 	transformed = tf.einsum('aij,i->aij', transformed, (image_shape - 1))
 	return transformed
 
-def warp_using_coords(inGray, omega_dn, shape, batchSize):
+def warp_using_coords(inGray, omega_dn, shape, batchSize, oobPixels):
 	"""
 		Warps image using the coordinates found in omega_dn
 	"""
-	# FIXME: deal with invalid values in omega_dn
 	# Flatten omega_dn
 	b = tf.constant([shape[1],1])
 	omegaFlat = tf.einsum('aij,i->aj', omega_dn, b) # Shape: [batches x pixels]
 
-	omegaFlat = tf.reshape(omegaFlat, (batchSize, -1, 1))
+	# Only valid pixels
+	omegaFlat_VO = omegaFlat * tf.cast(tf.logical_not(oobPixels), dtype = tf.float32)
 
-	warped = tf.gather_nd(inGray, tf.cast(omegaFlat, tf.int32))
+	omegaFlat_VO = tf.reshape(omegaFlat_VO, (batchSize, -1, 1))
+
+	warped = tf.gather_nd(inGray, tf.cast(omegaFlat_VO, tf.int32))
 	return warped
 
 def warp_graph(depthFlat, inGray, poseM, shape, batchSize):
@@ -74,5 +76,5 @@ def warp_graph(depthFlat, inGray, poseM, shape, batchSize):
 
 	omega_dn = tf.round(denormalize_image_points(omega, tf.constant(shape)))
 
-	warpedFlat = warp_using_coords(inGray, omega_dn, oobPixels)
+	warpedFlat = warp_using_coords(inGray, omega_dn, shape, batchSize)
 	return warpedFlat
