@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-09 16:04:29
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-16 16:31:49
+# @Last Modified time: 2017-03-20 14:48:55
 from Depth_Estim_Net import Depth_Estim_Net as DEN
 import numpy as np
 from util.NYU_Data import NYU_Data
@@ -10,17 +10,17 @@ import matplotlib.pyplot as plt
 import h5py
 
 config = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/conf/init.yaml"
-depthFile = "/esat/citrine/tmp/troussel/IROS/kinect/NYU_data/NYU_train2.hdf5"
+depthFile = "/esat/citrine/tmp/troussel/IROS/kinect/NYU_data/NYU_validate2.hdf5"
 rootData = "/esat/emerald/pchakrav/StijnData/NYUv2/processed/"
 
-rootFolder = "/esat/citrine/tmp/troussel/IROS/depth_estim/NYU_BN_scope/" 
+rootFolder = "/esat/citrine/tmp/troussel/IROS/depth_estim/scale_inv/"
 weightsLoc = "%scheckpoint/" % rootFolder
 
 threshold = 1.25
 
 def main():
 	# Load Network
-	net = DEN(weightsLoc, summaryLocation = "/users/visics/troussel/tmp/sum/", confFileName = config, training = False)
+	net = DEN(weightsLoc, summaryLocation = "/users/visics/troussel/tmp/sum_log/", confFileName = config, training = False)
 	net.config["batchSize"] =  128
 
 	# Open validation data

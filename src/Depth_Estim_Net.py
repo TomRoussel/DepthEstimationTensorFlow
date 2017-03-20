@@ -2,7 +2,7 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-16 11:03:29
+# @Last Modified time: 2017-03-20 15:01:57
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -103,7 +103,7 @@ class Depth_Estim_Net(object):
 		with tf.name_scope("Fully_connected"):
 			# Flatten
 			graphTail = tf.reshape(graphTail, [self.config["batchSize"], -1])
-			graphTail = fully_connected(inputs = graphTail, num_outputs = 4096)
+			graphTail = fully_connected(inputs = graphTail, num_outputs = 4096, activation_fn=tf.nn.relu)
 			graphTail = fully_connected(inputs = graphTail, num_outputs = self.config["HOut"] * self.config["WOut"])
 
 		return graphTail
@@ -155,7 +155,7 @@ class Depth_Estim_Net(object):
 		if training:
 			tf.summary.scalar("Loss", self.loss) 
 
-	def train(self, trainingData, loadChkpt = False):
+	def train(self, trainingData, loadChkpt = False, lossFunc = None):
 		"""
 			Train the network using inputData. This should be a numpy array, [images x H x W x C].
 			gtDepth [images x H x W]
@@ -167,7 +167,11 @@ class Depth_Estim_Net(object):
 		with tf.name_scope("Training"):
 			self.fullGraph = self.build_graph(training = True)
 			self.gtDepthPlaceholder = tf.placeholder(tf.float32, shape = [self.config["batchSize"], self.config["HOut"], self.config["WOut"]], name="depth_in")
-			self.loss = self.add_l2_loss(self.fullGraph, self.gtDepthPlaceholder)
+
+			if lossFunc is None:
+				self.loss = self.add_l2_loss(self.fullGraph, self.gtDepthPlaceholder)
+			else:
+				self.loss = lossFunc(self.fullGraph, self.gtDepthPlaceholder)
 			
 			# Add summaries
 			self.summaries()
@@ -239,8 +243,29 @@ class Depth_Estim_Net(object):
 		return out
 
 	def add_l2_loss(self, inGraph, gtDepth):
-		flatDepth = tf.reshape(gtDepth, shape = (self.config["batchSize"], self.config["HOut"] * self.config["WOut"]))
-		return tf.nn.l2_loss(tf.subtract(inGraph, flatDepth))
+		with tf.name_scope("loss"):
+
+			flatDepth = tf.reshape(gtDepth, shape = (self.config["batchSize"], self.config["HOut"] * self.config["WOut"]))
+			return tf.nn.l2_loss(tf.subtract(inGraph, flatDepth))
+
+	def scale_invariant_loss(self, inGraph, gtDepth):
+		lamb = 0.5
+		with tf.name_scope("loss"):
+			# Avoid dividing by zero
+			eps = 1e-10
+			# Amount of pixels in a single depth map
+			pixels = self.config["HOut"] * self.config["WOut"] 
+
+			# Flatten depth maps
+			flatDepth = tf.reshape(gtDepth, shape = (self.config["batchSize"], self.config["HOut"] * self.config["WOut"]))
+
+			logloss = inGraph - tf.log(flatDepth+eps)
+			SE = tf.reduce_sum(tf.pow(logloss,2), reduction_indices = 1)
+			scaleInvarTerm = lamb * tf.pow(tf.reduce_sum(logloss, reduction_indices=1), 2)
+
+			perBatchLoss = SE/pixels - scaleInvarTerm/(pixels**2)
+			loss = tf.reduce_sum(perBatchLoss)
+			return loss
 
 	def _check_conf_dictionary(self, conf):
 		"""

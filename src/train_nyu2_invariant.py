@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-02-07 16:14:25
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-20 10:51:21
+# @Last Modified time: 2017-03-20 10:52:41
 import numpy as np
 import argparse
 from Depth_Estim_Net import Depth_Estim_Net as DEN
@@ -21,7 +21,7 @@ configFile = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/co
 depthFile = "/esat/citrine/tmp/troussel/IROS/kinect/NYU_data/NYU_train2.hdf5"
 rootData = "/esat/emerald/pchakrav/StijnData/NYUv2/processed/"
 
-rootFolder = "/esat/citrine/tmp/troussel/IROS/depth_estim/rubbish/"
+rootFolder = "/esat/citrine/tmp/troussel/IROS/depth_estim/scale_inv/"
 summaryLoc = "%ssummary" % rootFolder
 weightsLoc = "%scheckpoint/" % rootFolder
 
@@ -47,7 +47,7 @@ def main():
 	dataGenerator = prepare_data(depthFile, rootData, network.config)
 	# Train network
 	print("Starting training")
-	network.train(dataGenerator, loadChkpt = False)
+	network.train(dataGenerator, loadChkpt = False, lossFunc = network.scale_invariant_loss)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
