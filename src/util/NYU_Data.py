@@ -5,10 +5,14 @@ from math import floor
 import PIL.Image as im
 import h5py
 
+# TODO: Replace config parameter and replace with batchSize. Other parameters can be taken from hdf file, makes it easier and more generic
 class NYU_Data(object):
 	"""
 		Object that handles loading NYU data from an HDF file
 		Is iterable
+		@config: python dictionary containing parameters about the data.
+		@rootDataFolder: root folder containing the RGB data
+		@hdfFn: Path to the .hdf5 file
 	"""
 	def __init__(self, rootDataFolder, hdfFn, config):
 		self.rootDataFolder = rootDataFolder

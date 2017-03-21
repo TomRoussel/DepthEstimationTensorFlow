@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-09 16:04:29
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-20 14:48:55
+# @Last Modified time: 2017-03-21 10:50:39
 from Depth_Estim_Net import Depth_Estim_Net as DEN
 import numpy as np
 from util.NYU_Data import NYU_Data
@@ -17,6 +17,7 @@ rootFolder = "/esat/citrine/tmp/troussel/IROS/depth_estim/scale_inv/"
 weightsLoc = "%scheckpoint/" % rootFolder
 
 threshold = 1.25
+logdepth = True
 
 def main():
 	# Load Network
@@ -24,10 +25,10 @@ def main():
 	net.config["batchSize"] =  128
 
 	# Open validation data
-	hdfF = h5py.File(depthFile, 'r')
+	# hdfF = h5py.File(depthFile, 'r')
 
 	# Construct data loader
-	data = NYU_Data(rootData, hdfF, net.config)
+	data = NYU_Data(rootData, depthFile, net.config)
 
 	rmseList = []
 	validCount = 0
@@ -36,6 +37,10 @@ def main():
 	for index, (rgb, gtDepth) in enumerate(data):
 		# Frop
 		depth = net.fprop(rgb)
+
+		if logdepth:
+			depth = np.exp(depth)
+
 		# Get loss
 		diff = depth - np.reshape(gtDepth, (net.config["batchSize"], net.config["HOut"]*net.config["WOut"]))
 		rmse = np.sum(np.power(diff,2))/ (diff.shape[0] * diff.shape[1])

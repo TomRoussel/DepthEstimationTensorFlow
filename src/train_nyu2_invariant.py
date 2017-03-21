@@ -2,13 +2,14 @@
 # @Author: Tom Roussel
 # @Date:   2017-02-07 16:14:25
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-20 10:52:41
+# @Last Modified time: 2017-03-21 11:04:15
 import numpy as np
 import argparse
 from Depth_Estim_Net import Depth_Estim_Net as DEN
 from util.util import loadmat, safe_mkdir
 import util.NYU_Data as NYU_Data
 import h5py
+import tensorflow as tf
 
 # TODO: Make argument parser
 
@@ -37,17 +38,24 @@ def prepare_dir(summaryLoc, weightsLoc):
 	safe_mkdir(summaryLoc)
 	safe_mkdir(weightsLoc)
 	
+def getSessionConfig():
+	conf = tf.ConfigProto()
+	conf.gpu_options.allow_growth = True
+	conf.log_device_placement = True
+	return conf
+
 def main():
 	# Make network
 	prepare_dir(summaryLoc, weightsLoc)
 	print("Loading network configuration")
-	network = DEN(weightsLoc, summaryLoc, confFileName = configFile, training = True)
+	sessionConfig = getSessionConfig()
+	network = DEN(weightsLoc, summaryLoc, confFileName = configFile, training = True, tfConfig = sessionConfig)
 	# Prepare training data
 	print("Preparing data")
 	dataGenerator = prepare_data(depthFile, rootData, network.config)
 	# Train network
 	print("Starting training")
-	network.train(dataGenerator, loadChkpt = False, lossFunc = network.scale_invariant_loss)
+	network.train(dataGenerator, loadChkpt = True, lossFunc = network.scale_invariant_loss)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()

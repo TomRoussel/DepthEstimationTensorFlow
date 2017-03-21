@@ -2,7 +2,7 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-21 10:49:56
+# @Last Modified time: 2017-03-21 14:19:41
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -229,7 +229,7 @@ class Depth_Estim_Net(object):
 			self.summaries(training = False)
 			self.sumOp = tf.summary.merge_all()
 
-			self.sess = tf.Session(config = tfConfig)
+			self.sess = tf.Session(config = self.tfConfig)
 			saver = tf.train.Saver()
 			self.load_weights(self.sess, self.weightsLoc, saver)
 
