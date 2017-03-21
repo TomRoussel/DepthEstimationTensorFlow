@@ -2,7 +2,7 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-20 15:01:57
+# @Last Modified time: 2017-03-21 10:49:56
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -13,7 +13,7 @@ from math import floor
 # TODO: Implement evaluation & fprop
 
 class Depth_Estim_Net(object):
-	def __init__(self, weightsLoc, summaryLocation = None, config=None, confFileName=None, training=True):
+	def __init__(self, weightsLoc, summaryLocation = None, config=None, confFileName=None, training=True, tfConfig = None):
 		"""
 			@config: 		A dictionary containing all the parameters for the network. Will throw an exception if there are parameters missing.
 			@confFileName: 	Path to a yaml file containing the parameters of the network. Only this parameter or the config parameter can
@@ -30,6 +30,7 @@ class Depth_Estim_Net(object):
 
 		self.summaryLocation = summaryLocation
 		self.weightsLoc = weightsLoc
+		self.tfConfig = tfConfig
 		self.sess = None # Session when fpropping
 		self.sumWriter = None
 
@@ -187,7 +188,7 @@ class Depth_Estim_Net(object):
 
 		print("Starting tensorflow session")
 		for key in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES): print(key)
-		with tf.Session() as sess:
+		with tf.Session(config = self.tfConfig) as sess:
 			if not self.summaryLocation is None:
 				self.sumWriter = tf.summary.FileWriter(self.summaryLocation, graph=sess.graph)
 			saver = tf.train.Saver()
@@ -228,7 +229,7 @@ class Depth_Estim_Net(object):
 			self.summaries(training = False)
 			self.sumOp = tf.summary.merge_all()
 
-			self.sess = tf.Session()
+			self.sess = tf.Session(config = tfConfig)
 			saver = tf.train.Saver()
 			self.load_weights(self.sess, self.weightsLoc, saver)
 
