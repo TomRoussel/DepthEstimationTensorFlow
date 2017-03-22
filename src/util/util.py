@@ -4,7 +4,13 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from os.path import basename, splitext, exists, split
+import PIL.Image as im
 
+def get_depth(idName, bpathDepth):
+    fn = "%s/%s.png" % (bpathDepth, idName)
+    depth = np.asarray(im.open(fn))
+    depthFloat = depth.astype(np.float32) # /255*8 for own images
+    return depthFloat
 
 def loadmat(filename):
     '''
