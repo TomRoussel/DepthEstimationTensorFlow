@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-09 16:04:29
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-21 10:50:39
+# @Last Modified time: 2017-03-22 15:57:38
 from Depth_Estim_Net import Depth_Estim_Net as DEN
 import numpy as np
 from util.NYU_Data import NYU_Data
@@ -13,11 +13,11 @@ config = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/conf/i
 depthFile = "/esat/citrine/tmp/troussel/IROS/kinect/NYU_data/NYU_validate2.hdf5"
 rootData = "/esat/emerald/pchakrav/StijnData/NYUv2/processed/"
 
-rootFolder = "/esat/citrine/tmp/troussel/IROS/depth_estim/scale_inv/"
+rootFolder = "/esat/citrine/tmp/troussel/IROS/depth_estim/fixedRelu_L2/"
 weightsLoc = "%scheckpoint/" % rootFolder
 
 threshold = 1.25
-logdepth = True
+logdepth = False
 
 def main():
 	# Load Network
