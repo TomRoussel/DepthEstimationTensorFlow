@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 13:59:42
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-22 15:40:59
+# @Last Modified time: 2017-03-22 16:05:59
 
 import tensorflow as tf
 import numpy as np
@@ -40,7 +40,6 @@ def warp_using_coords(inGray, omega_dn, shape, batchSize, oobPixels):
 	batchNo = tf.tile(tf.reshape(tf.linspace(0.0,float(batchSize-1), batchSize), (-1,1)), [1,shape[1]*shape[0]])
 	indexes = tf.stack([batchNo,omegaFlat_VO], axis = 2)
 
-	print indexes
 	warped = tf.gather_nd(inGray, tf.cast(indexes, tf.int32))
 	return warped
 
