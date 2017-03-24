@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Tom Roussel
 # @Date:   2017-03-16 13:59:42
-# @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-22 16:05:59
+# @Last Modified by:   Tom
+# @Last Modified time: 2017-03-24 11:21:35
 
 import tensorflow as tf
 import numpy as np
@@ -24,6 +24,8 @@ def denormalize_image_points(coords, image_shape):
 	transformed = tf.einsum('aij,i->aij', transformed, (image_shape - 1))
 	return transformed
 
+# TODO: Clean this up. There's no reason for this to have so many parameters
+# TODO: Implement gradient for this function
 def warp_using_coords(inGray, omega_dn, shape, batchSize, oobPixels):
 	"""
 		Warps image using the coordinates found in omega_dn
@@ -40,9 +42,10 @@ def warp_using_coords(inGray, omega_dn, shape, batchSize, oobPixels):
 	batchNo = tf.tile(tf.reshape(tf.linspace(0.0,float(batchSize-1), batchSize), (-1,1)), [1,shape[1]*shape[0]])
 	indexes = tf.stack([batchNo,omegaFlat_VO], axis = 2)
 
-	warped = tf.gather_nd(inGray, tf.cast(indexes, tf.int32))
+	warped = tf.gather_nd(inGray, tf.cast(indexes, tf.int32)) # NOTE: no gradients through indices
 	return warped
 
+# FIXME: Test extent of automatic gradient calculation
 def warp_graph(depthFlat, inGray, poseM, shape, batchSize):
 	"""
 		poseM: shape = [batch x 4 x 4]
@@ -62,7 +65,6 @@ def warp_graph(depthFlat, inGray, poseM, shape, batchSize):
 	ppNormTensor = tf.concat([tf.constant(np.tile(ppNorm, (batchSize, 1,1)), dtype=tf.float32), tf.ones((batchSize, 1, pixelAmount))], axis = 1)
 
 	# Multiply by depth values
-	# FIXME: x and y need to be switched around
 	positionV = tf.einsum('abk,ak->abk', ppNormTensor, depthFlat)
 	positionV = tf.stack([positionV[:,1,:],positionV[:,0,:],positionV[:,2,:]], axis = 1)
 	# Add row of ones
@@ -79,7 +81,7 @@ def warp_graph(depthFlat, inGray, poseM, shape, batchSize):
 	oobPixels2D = tf.logical_or(omega >= 1, omega <= -1) 
 	oobPixels = tf.logical_or(oobPixels2D[:,0,:], oobPixels2D[:,1,:])
 
-	omega_dn = tf.round(denormalize_image_points(omega, tf.constant(shape, dtype=tf.float32)))
+	omega_dn = tf.round(denormalize_image_points(omega, tf.constant(shape, dtype=tf.float32))) # NOTE: no gradients through round
 	# omega_dn = tf.Print(omega_dn, [ppNormTensor, positionV, projectedPoints, omega, oobPixels], summarize = 1e6)
 	warpedFlat = warp_using_coords(inGray, omega_dn, shape, batchSize, oobPixels)
 	return tf.reshape(warpedFlat, (batchSize, shape[0], shape[1]))
