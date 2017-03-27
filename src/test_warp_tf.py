@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 14:00:33
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-22 16:59:05
+# @Last Modified time: 2017-03-27 16:20:22
 import tensorflow as tf
 import numpy as np
 import util.SEDWarp as SEDWarp
@@ -30,7 +30,7 @@ def warpTF(frame, depth, poseM):
 	greyFlat = tf.reshape(inputGraph, (2,480*640))
 	depthFlat = tf.reshape(depthGraph, (2,480*640))
 	# Build warping graph
-	warpGraph = SEDWarp.warp_graph(depthFlat, greyFlat, poseMGraph, (480,640), 2)
+	warpGraph = SEDWarp.warp_graph(depthFlat, greyFlat, poseMGraph, [int(x) for x in inputGraph.shape[1:]])
 
 	# Start tensorflow session
 	with tf.Session(config=tf.ConfigProto(device_count = {'GPU': 0})) as sess:
