@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 13:59:42
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-27 16:19:42
+# @Last Modified time: 2017-03-29 12:54:58
 
 import tensorflow as tf
 import numpy as np
@@ -25,37 +25,60 @@ def denormalize_image_points(coords, image_shape):
 	return transformed
 
 # TODO: Implement gradient for this function
-def warp_using_coords(inGray, omega_dn, oobPixels, shape):
+def _indexing_op_(inGray, omega):
+	"""
+		Performs the actual warping
+		@inGray: input grayscale image shape [batchSize, pixels]
+		@omega: Warping coordinates, shape [batchSize, pixels]
+		@shape: The output shape
+	"""
+	batchSize = int(omega.shape[0])
+	omega = tf.reshape(omega, (batchSize,-1))
+	omega = tf.round(omega)
+	batchNo = tf.tile(tf.reshape(tf.linspace(0.0,float(batchSize-1), batchSize), (-1,1)), [1,int(inGray.shape[2])*int(inGray.shape[1])])
+	indexes = tf.stack([batchNo,omega], axis = 2)
+	inGrayFlat = tf.reshape(inGray, (batchSize, int(inGray.shape[2])*int(inGray.shape[1])))
+	warped = tf.gather_nd(inGrayFlat, tf.cast(indexes, tf.int32)) # NOTE: no gradients through indices
+	return warped
+
+def warp_using_coords(inGray, omega_dn, oobPixels):
 	"""
 		Warps image using the coordinates found in omega_dn
+		@inGray: input grayscale image shape [batchSize, pixels]
+		@omega: Warping coordinates, shape [batchSize, 2, pixels]
+		@oobPixels: out of bounds pixels, entries set to true will be 0 in the output image, shape [batchSize, pixels]
+		@shape: The output shape
 	"""
 	omega_dn = tf.round(omega_dn)
 	batchSize = int(omega_dn.shape[0])
 	# Flatten omega_dn
-	b = tf.constant([shape[1],1], dtype=tf.float32)
+	b = tf.constant([int(inGray.shape[2]),1], dtype=tf.float32)
 	omegaFlat = tf.einsum('aij,i->aj', omega_dn, b) # Shape: [batches x pixels]
 
 	# Only valid pixels
 	omegaFlat_VO = omegaFlat * tf.cast(tf.logical_not(oobPixels), dtype = tf.float32)
 
-	omegaFlat_VO = tf.reshape(omegaFlat_VO, (batchSize,-1))
-
-	batchNo = tf.tile(tf.reshape(tf.linspace(0.0,float(batchSize-1), batchSize), (-1,1)), [1,shape[1]*shape[0]])
-	indexes = tf.stack([batchNo,omegaFlat_VO], axis = 2)
-
-	warped = tf.gather_nd(inGray, tf.cast(indexes, tf.int32)) # NOTE: no gradients through indices
+	# TODO: circumvent normal gradient calculation
+	warped = _indexing_op_(inGray, omegaFlat_VO)
 	return warped
 
-def warp_graph(depthFlat, inGray, poseM, shape):
+# TODO: Adjust so that not the flat input is given but the full shape
+def warp_graph(depth, inGray, poseM):
 	"""
-		poseM: shape = [batch x 4 x 4]
+		Constructs a graph that waros an image for a given depth and pose matrix
+		@depth: Depth image, flattened. Shape [batchSize, pixels]
+		@inGray: input grayscale image, will be warped. Shape [batchSize, pixels]
+		@poseM: Posematrix representing the movement between two frames. Shape [batchSize, 4, 4]
+		@shape: output shape
 	"""
 	batchSize = [int(x) for x in inGray.shape][0]
+	shape = [int(x) for x in inGray.shape][1:]
 	pixelAmount = shape[0] * shape[1]
 	expand = lambda z: (z//shape[1],z % shape[1]) # Reverses previous operation
 
 	assert len(shape) == 2, "Unexpected shape: inGray"
 
+	depthFlat = tf.reshape(depth, (batchSize, pixelAmount))
 	# Add small value to prevent division by zero later on
 	depthFlat += 1e-9
 
@@ -85,5 +108,5 @@ def warp_graph(depthFlat, inGray, poseM, shape):
 
 	omega_dn = denormalize_image_points(omega, tf.constant(shape, dtype=tf.float32))
 	# omega_dn = tf.Print(omega_dn, [ppNormTensor, positionV, projectedPoints, omega, oobPixels], summarize = 1e6)
-	warpedFlat = warp_using_coords(inGray, omega_dn, oobPixels, shape)
+	warpedFlat = warp_using_coords(inGray, omega_dn, oobPixels)
 	return tf.reshape(warpedFlat, (batchSize, shape[0], shape[1]))

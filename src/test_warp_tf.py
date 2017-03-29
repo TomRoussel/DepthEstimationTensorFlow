@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 14:00:33
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-27 16:20:22
+# @Last Modified time: 2017-03-28 15:27:56
 import tensorflow as tf
 import numpy as np
 import util.SEDWarp as SEDWarp
@@ -14,8 +14,8 @@ from scipy.misc import imresize
 from time import time
 
 fnXML = "/users/visics/troussel/tmp/test_SIM3.xml"
-bpath = "/esat/citrine/tmp/troussel/IROS/kinect/Kinect2/tmp_data/office4/RGB"
-bpathDepth = "/esat/citrine/tmp/troussel/IROS/kinect/Kinect2/tmp_data/office4/depth"
+bpath = "/esat/citrine/troussel/IROS/kinect/Kinect2/tmp_data/office4/RGB"
+bpathDepth = "/esat/citrine/troussel/IROS/kinect/Kinect2/tmp_data/office4/depth"
 
 def warpNormal(frame, depth, poseM):
 	warped = SEDWarp2.warp_image_opt(frame,depth,poseM)
@@ -27,10 +27,10 @@ def warpTF(frame, depth, poseM):
 	depthGraph = tf.placeholder(tf.float32, shape = [2, 480, 640], name="depth_in")
 	poseMGraph = tf.placeholder(tf.float32, shape = [2,4,4], name="poseM")
 	# Properly reshape frame and depth
-	greyFlat = tf.reshape(inputGraph, (2,480*640))
-	depthFlat = tf.reshape(depthGraph, (2,480*640))
+	# greyFlat = tf.reshape(inputGraph, (2,480*640))
+	# depthFlat = tf.reshape(depthGraph, (2,480*640))
 	# Build warping graph
-	warpGraph = SEDWarp.warp_graph(depthFlat, greyFlat, poseMGraph, [int(x) for x in inputGraph.shape[1:]])
+	warpGraph = SEDWarp.warp_graph(depthGraph, inputGraph, poseMGraph)
 
 	# Start tensorflow session
 	with tf.Session(config=tf.ConfigProto(device_count = {'GPU': 0})) as sess:
