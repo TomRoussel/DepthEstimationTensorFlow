@@ -2,23 +2,22 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 13:59:42
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-30 14:53:23
+# @Last Modified time: 2017-03-30 18:19:37
 
 import tensorflow as tf
 import numpy as np
 
 # TODO: Make this a relative path
 # TODO: OR make this using py_func
-zeroOut2 = tf.load_op_library('/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/src/test/zero_out2.so').zero_out2
+# zeroOut2 = tf.load_op_library('/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/src/test/zero_out2.so').zero_out2
+zeroOut3 = tf.load_op_library('/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/src/test/zero_out2.so').zero_out3
 
 def image_gradient(image):
 	return np.gradient(image, axis = (1,2))
 
-# TODO: Take oobpixels into account
-@tf.RegisterGradient("ZeroOut2")
+@tf.RegisterGradient("ZeroOut3")
 def test_gradient_register(operation, grad):
-	import pdb; pdb.set_trace()
-	image, omega = operation.inputs
+	image, omega, oobPixels = operation.inputs
 	batchSize = int(image.shape[0])
 	shape = [int(x) for x in image.shape][1:]
 	pixelAmount = shape[0] * shape[1]
@@ -30,9 +29,12 @@ def test_gradient_register(operation, grad):
 
 	omegaFlat = tf.reshape(omegaFlat, (batchSize,-1))
 	omegaFlat = tf.round(omegaFlat)
+	omegaFlat = omegaFlat * tf.cast(tf.logical_not(oobPixels), dtype = tf.float32)
 	batchNo = tf.tile(tf.reshape(tf.linspace(0.0,float(batchSize-1), batchSize), (-1,1)), (1,pixelAmount))
+	
 	indexes = tf.stack([batchNo,omegaFlat], axis = 2)
 	indexes = tf.cast(indexes, tf.int32)
+	# indexes = tf.Print(indexes, [indexes], message="indexes", summarize = 1e6)
 
 	# Get gradient image
 	gradientImage = tf.stack(tf.py_func(image_gradient, [image], [tf.float32,tf.float32]), axis=1) # [batches, dimensions, H, W]
@@ -44,7 +46,7 @@ def test_gradient_register(operation, grad):
 
 	outGrad = tf.stack([fx*gradFlat, fy*gradFlat], axis = 1)
 
-	return None, outGrad
+	return None, outGrad, None
 
 def normalize_image_points(coords, image_shape):
 	"""
@@ -147,6 +149,6 @@ def warp_graph(depth, inGray, poseM):
 	# omega_dn = tf.Print(omega_dn, [ppNormTensor, positionV, projectedPoints, omega, oobPixels], summarize = 1e6)
 	warped = warp_using_coords(inGray, omega_dn, oobPixels)
 	# Override gradient
-	B = zeroOut2(warped, omega_dn)
+	B = zeroOut3(warped, omega_dn, oobPixels)
 	warped = B + tf.stop_gradient(warped - B)
 	return warped
