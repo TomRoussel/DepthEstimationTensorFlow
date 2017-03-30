@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 14:00:33
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-28 15:27:56
+# @Last Modified time: 2017-03-29 16:31:59
 import tensorflow as tf
 import numpy as np
 import util.SEDWarp as SEDWarp
@@ -31,6 +31,7 @@ def warpTF(frame, depth, poseM):
 	# depthFlat = tf.reshape(depthGraph, (2,480*640))
 	# Build warping graph
 	warpGraph = SEDWarp.warp_graph(depthGraph, inputGraph, poseMGraph)
+	# print(tf.gradients(warpGraph, depthGraph))
 
 	# Start tensorflow session
 	with tf.Session(config=tf.ConfigProto(device_count = {'GPU': 0})) as sess:

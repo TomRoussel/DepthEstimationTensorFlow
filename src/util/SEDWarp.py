@@ -2,10 +2,28 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 13:59:42
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-29 12:54:58
+# @Last Modified time: 2017-03-29 16:33:30
 
 import tensorflow as tf
 import numpy as np
+
+# TODO: Make this a relative path
+# TODO: OR make this using py_func
+zeroOut2 = tf.load_op_library('/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/src/test/zero_out2.so').zero_out2
+
+def image_gradient(image):
+	return np.gradient(image, axis = (1,2))
+
+# TODO: Finish implementation
+@tf.RegisterGradient("ZeroOut2")
+def test_gradient_register(operation, grad):
+	import pdb; pdb.set_trace()
+	image, omega = operation.inputs
+	# Get gradient image
+
+	# Evaluate with omega
+
+	return None
 
 def normalize_image_points(coords, image_shape):
 	"""
@@ -38,7 +56,8 @@ def _indexing_op_(inGray, omega):
 	batchNo = tf.tile(tf.reshape(tf.linspace(0.0,float(batchSize-1), batchSize), (-1,1)), [1,int(inGray.shape[2])*int(inGray.shape[1])])
 	indexes = tf.stack([batchNo,omega], axis = 2)
 	inGrayFlat = tf.reshape(inGray, (batchSize, int(inGray.shape[2])*int(inGray.shape[1])))
-	warped = tf.gather_nd(inGrayFlat, tf.cast(indexes, tf.int32)) # NOTE: no gradients through indices
+	warpedFlat = tf.gather_nd(inGrayFlat, tf.cast(indexes, tf.int32)) # NOTE: no gradients through indices
+	warped = tf.reshape(warpedFlat, (batchSize, int(inGray.shape[1]), int(inGray.shape[2])))
 	return warped
 
 def warp_using_coords(inGray, omega_dn, oobPixels):
@@ -58,8 +77,10 @@ def warp_using_coords(inGray, omega_dn, oobPixels):
 	# Only valid pixels
 	omegaFlat_VO = omegaFlat * tf.cast(tf.logical_not(oobPixels), dtype = tf.float32)
 
-	# TODO: circumvent normal gradient calculation
 	warped = _indexing_op_(inGray, omegaFlat_VO)
+	# Override gradient
+	B = zeroOut2(warped, omega_dn)
+	warped = B + tf.stop_gradient(warped - B)
 	return warped
 
 # TODO: Adjust so that not the flat input is given but the full shape
@@ -108,5 +129,5 @@ def warp_graph(depth, inGray, poseM):
 
 	omega_dn = denormalize_image_points(omega, tf.constant(shape, dtype=tf.float32))
 	# omega_dn = tf.Print(omega_dn, [ppNormTensor, positionV, projectedPoints, omega, oobPixels], summarize = 1e6)
-	warpedFlat = warp_using_coords(inGray, omega_dn, oobPixels)
-	return tf.reshape(warpedFlat, (batchSize, shape[0], shape[1]))
+	warped = warp_using_coords(inGray, omega_dn, oobPixels)
+	return warped
