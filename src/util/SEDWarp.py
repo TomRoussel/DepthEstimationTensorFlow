@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 13:59:42
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-29 16:33:30
+# @Last Modified time: 2017-03-30 14:16:35
 
 import tensorflow as tf
 import numpy as np
@@ -15,15 +15,36 @@ def image_gradient(image):
 	return np.gradient(image, axis = (1,2))
 
 # TODO: Finish implementation
+# TODO: Add oobpixels
 @tf.RegisterGradient("ZeroOut2")
 def test_gradient_register(operation, grad):
 	import pdb; pdb.set_trace()
 	image, omega = operation.inputs
+	batchSize = int(image.shape[0])
+	shape = [int(x) for x in image.shape][1:]
+	pixelAmount = shape[0] * shape[1]
+
+	# Flatten omega
+	b = tf.constant([int(shape[1]),1], dtype=tf.float32)
+	omegaFlat = tf.einsum('aij,i->aj', omega, b) # Shape: [batches x pixels]
+
+	omegaFlat = tf.reshape(omegaFlat, (batchSize,-1))
+	omegaFlat = tf.round(omegaFlat)
+	batchNo = tf.tile(tf.reshape(tf.linspace(0.0,float(batchSize-1), batchSize), (-1,1)), (1,pixelAmount))
+	indexes = tf.stack([batchNo,omegaFlat], axis = 2)
+	indexes = tf.cast(indexes, tf.int32)
+
 	# Get gradient image
-
+	gradientImage = tf.stack(tf.py_func(image_gradient, [image], [tf.float32,tf.float32]), axis=1) # [batches, dimensions, H, W]
+	gradientImageFlat = tf.reshape(gradientImage, (batchSize, 2, pixelAmount))
 	# Evaluate with omega
+	fx = tf.gather_nd(gradientImageFlat[:,0,:], indexes)
+	fy = tf.gather_nd(gradientImageFlat[:,1,:], indexes)
+	gradFlat = tf.reshape(grad, (batchSize, pixelAmount))
 
-	return None
+	outGrad = tf.stack([fx*gradFlat, fy*gradFlat], axis = 1)
+
+	return None, outGrad
 
 def normalize_image_points(coords, image_shape):
 	"""
@@ -68,7 +89,7 @@ def warp_using_coords(inGray, omega_dn, oobPixels):
 		@oobPixels: out of bounds pixels, entries set to true will be 0 in the output image, shape [batchSize, pixels]
 		@shape: The output shape
 	"""
-	omega_dn = tf.round(omega_dn)
+	# omega_dn = tf.round(omega_dn)
 	batchSize = int(omega_dn.shape[0])
 	# Flatten omega_dn
 	b = tf.constant([int(inGray.shape[2]),1], dtype=tf.float32)
@@ -78,9 +99,6 @@ def warp_using_coords(inGray, omega_dn, oobPixels):
 	omegaFlat_VO = omegaFlat * tf.cast(tf.logical_not(oobPixels), dtype = tf.float32)
 
 	warped = _indexing_op_(inGray, omegaFlat_VO)
-	# Override gradient
-	B = zeroOut2(warped, omega_dn)
-	warped = B + tf.stop_gradient(warped - B)
 	return warped
 
 # TODO: Adjust so that not the flat input is given but the full shape
@@ -130,4 +148,7 @@ def warp_graph(depth, inGray, poseM):
 	omega_dn = denormalize_image_points(omega, tf.constant(shape, dtype=tf.float32))
 	# omega_dn = tf.Print(omega_dn, [ppNormTensor, positionV, projectedPoints, omega, oobPixels], summarize = 1e6)
 	warped = warp_using_coords(inGray, omega_dn, oobPixels)
+	# Override gradient
+	B = zeroOut2(warped, omega_dn)
+	warped = B + tf.stop_gradient(warped - B)
 	return warped
