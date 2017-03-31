@@ -2,13 +2,15 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-31 09:42:09
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-31 10:07:18
+# @Last Modified time: 2017-03-31 10:23:52
 
 import os
 import tensorflow as tf
 import shlex
 from subprocess import call
 
+# NOTE: This will not work when using gcc 4 or older
+#       Remove "-D_GLIBCXX_USE_CXX11_ABI=0" from cmd if this is the case
 def compile_shared_library(fnCC, fnSO):
 	"""
 		Compiles a set of ops
