@@ -2,15 +2,13 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 13:59:42
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-30 18:19:37
+# @Last Modified time: 2017-03-31 10:09:45
 
 import tensorflow as tf
 import numpy as np
+from ops import ZeroOutOps
 
-# TODO: Make this a relative path
-# TODO: OR make this using py_func
-# zeroOut2 = tf.load_op_library('/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/src/test/zero_out2.so').zero_out2
-zeroOut3 = tf.load_op_library('/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/src/test/zero_out2.so').zero_out3
+zeroOut3 = ZeroOutOps.zero_out3
 
 def image_gradient(image):
 	return np.gradient(image, axis = (1,2))
