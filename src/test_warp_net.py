@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 14:00:33
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-03 11:23:08
+# @Last Modified time: 2017-04-03 11:53:39
 import tensorflow as tf
 import numpy as np
 import util.SEDWarp as SEDWarp
@@ -72,12 +72,13 @@ def main():
 
 	plt.subplot(131)
 	plt.imshow(warpedTF[0]*0.5 + cannyIm*0.5, cmap = 'gray')
-	plt.title("TensorFlow warping")
+	plt.title("TensorFlow warping network")
 	plt.subplot(132)
 	plt.imshow(warpedTF[1]*0.5 + cannyIm*0.5, cmap = 'gray')
-	plt.title("TensorFlow warping")
+	plt.title("TensorFlow warping Kinect")
 	plt.subplot(133)
 	plt.imshow(np.abs(warpedTF[0] - rgb2gray(keyframe1)))
+	plt.title("Difference keyframe - warped image")
 	plt.show()
 
 if __name__ == '__main__':

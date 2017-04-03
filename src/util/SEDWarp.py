@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 13:59:42
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-03 09:58:48
+# @Last Modified time: 2017-04-03 12:33:04
 
 import tensorflow as tf
 import numpy as np
@@ -10,8 +10,9 @@ from ops import ZeroOutOps
 import xml.etree.ElementTree as ET
 from scipy.misc import imread
 
+zero_out3 = ZeroOutOps.zero_out3
 
-zeroOut3 = ZeroOutOps.zero_out3
+# TODO: properly deal with invalid pixels
 
 def _decode_frame_info(frameInfo, bpath):
 	# Parse the pose matrix
@@ -175,6 +176,6 @@ def warp_graph(depth, inGray, poseM):
 	# omega_dn = tf.Print(omega_dn, [ppNormTensor, positionV, projectedPoints, omega, oobPixels], summarize = 1e6)
 	warped = warp_using_coords(inGray, omega_dn, oobPixels)
 	# Override gradient
-	B = zeroOut3(warped, omega_dn, oobPixels)
+	B = zero_out3(warped, omega_dn, oobPixels)
 	warped = B + tf.stop_gradient(warped - B)
 	return warped
