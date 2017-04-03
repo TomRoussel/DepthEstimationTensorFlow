@@ -2,8 +2,15 @@
 * @Author: Tom Roussel
 * @Date:   2017-03-29 13:39:46
 * @Last Modified by:   Tom Roussel
-* @Last Modified time: 2017-03-30 18:03:44
+* @Last Modified time: 2017-04-03 11:51:37
+*
+* A set of ops that take several tensors as input and 
+* returns an all zero tensor of the same shape as the first
+* input. The goal is that this can be used to overwrite the
+* gradients of a subgraph.
 */
+
+
 
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/shape_inference.h"

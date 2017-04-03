@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-31 09:42:09
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-31 10:23:52
+# @Last Modified time: 2017-04-03 11:47:17
 
 import os
 import tensorflow as tf
@@ -30,8 +30,8 @@ def compile_shared_library(fnCC, fnSO):
 
 
 path = os.path.dirname(os.path.abspath(__file__))
-fnZeroOut = "%s/%s" % (path, "zero_out_two.cc")
-fnZeroOutSO = "%s/%s" % (path, "zero_out_two.so")
+fnZeroOut = "%s/%s" % (path, "zero_out.cc")
+fnZeroOutSO = "%s/%s" % (path, "zero_out.so")
 # Check if .so file exists
 if not os.path.isfile(fnZeroOutSO):
 	compile_shared_library(fnZeroOut, fnZeroOutSO)
