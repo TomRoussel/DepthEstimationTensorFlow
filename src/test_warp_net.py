@@ -2,11 +2,10 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 14:00:33
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-03 11:53:39
+# @Last Modified time: 2017-04-03 12:37:38
 import tensorflow as tf
 import numpy as np
 import util.SEDWarp as SEDWarp
-import util.SEDWarp_nonTF as SEDWarp2
 import matplotlib.pyplot as plt
 import util.util as util
 from scipy.misc import imresize
