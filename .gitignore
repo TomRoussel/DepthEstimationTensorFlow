@@ -4,3 +4,4 @@ src/*.pyc
 NYU2Split
 *sublime-workspace
 *.sublime-project
+*.so

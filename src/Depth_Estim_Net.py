@@ -2,15 +2,13 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-21 14:19:41
+# @Last Modified time: 2017-04-03 11:23:26
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
 import yaml
 import numpy as np
 from math import floor
-
-# TODO: Implement evaluation & fprop
 
 class Depth_Estim_Net(object):
 	def __init__(self, weightsLoc, summaryLocation = None, config=None, confFileName=None, training=True, tfConfig = None):
@@ -226,6 +224,7 @@ class Depth_Estim_Net(object):
 		if self.sess is None:
 			# Initialize everything
 			self.fullGraph = self.build_graph(training = False)
+			self.out = tf.reshape(self.fullGraph, (self.config["batchSize"], self.config["HOut"], self.config["WOut"]))
 			self.summaries(training = False)
 			self.sumOp = tf.summary.merge_all()
 
@@ -236,7 +235,7 @@ class Depth_Estim_Net(object):
 		if not self.summaryLocation is None and self.sumWriter is None:
 			self.sumWriter = tf.summary.FileWriter(self.summaryLocation, graph=self.sess.graph)
 
-		(out, summary) = self.sess.run([self.fullGraph, self.sumOp], feed_dict = {self.inputGraph : inData})
+		(out, summary) = self.sess.run([self.out, self.sumOp], feed_dict = {self.inputGraph : inData})
 
 		if not self.sumWriter is None:
 			self.sumWriter.add_summary(summary, 0)
