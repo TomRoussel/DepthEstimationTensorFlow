@@ -2,12 +2,12 @@
 # @Author: Tom Roussel
 # @Date:   2017-02-07 16:14:25
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-03 12:49:08
+# @Last Modified time: 2017-04-03 15:08:03
 import numpy as np
 import argparse
 from nets.Depth_Estim_Net import Depth_Estim_Net as DEN
 from util.util import loadmat, safe_mkdir
-import util.NYU_Data as NYU_Data
+import data.NYU_Data as NYU_Data
 import h5py
 
 # TODO: Make argument parser

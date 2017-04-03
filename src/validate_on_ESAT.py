@@ -2,10 +2,10 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-09 16:04:29
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-03 12:49:08
+# @Last Modified time: 2017-04-03 15:08:29
 from nets.Depth_Estim_Net import Depth_Estim_Net as DEN
 import numpy as np
-from util.ESAT_Data import ESAT_Data
+from data.ESAT_Data import ESAT_Data
 import matplotlib.pyplot as plt
 import h5py
 
