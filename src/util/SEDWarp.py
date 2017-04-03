@@ -2,13 +2,41 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 13:59:42
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-31 10:09:45
+# @Last Modified time: 2017-04-03 09:58:48
 
 import tensorflow as tf
 import numpy as np
 from ops import ZeroOutOps
+import xml.etree.ElementTree as ET
+from scipy.misc import imread
+
 
 zeroOut3 = ZeroOutOps.zero_out3
+
+def _decode_frame_info(frameInfo, bpath):
+	# Parse the pose matrix
+	poseMText = frameInfo.find("pose_matrix").text
+	poseMList = [float(x) for x in poseMText.split(',')]
+	poseM = np.reshape(np.asarray(poseMList), (4,4))
+
+	# Get the keyframe image
+	kfText = frameInfo.find("kf_path").text
+	kfloc = "%s/%s.png" % (bpath, kfText)
+	kf = imread(kfloc)
+
+	# Get the compared image
+	fText = frameInfo.find("f_path").text
+	floc = "%s/%s.png" % (bpath, fText)
+	f = imread(floc)
+
+	return (poseM, kf, f, kfText)
+
+def decode_xml(fnXML, index, bpath):
+	# Load xml file
+	tree = ET.parse(fnXML)
+	frameInfo = tree.getroot()[index]
+	
+	return _decode_frame_info(frameInfo, bpath)
 
 def image_gradient(image):
 	return np.gradient(image, axis = (1,2))
