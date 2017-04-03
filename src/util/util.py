@@ -175,30 +175,6 @@ class GT_getter(object):
         # Load mat file
         return self.matFile["data"]["depth_map"][:,:,matId]
 
-class RMSE_constructor(object):
-    def __init__(self, sparse, gt):
-        self.sparse = sparse
-        self.gt = gt
-        # self.validEntries = sparse != 0
-        self.validEntries = np.logical_and(sparse != 0, sparse != 1)
-        # plt.imshow(self.validEntries); plt.show()
-
-    def error(self, scale):
-        (err, _) = rmse_error(self.sparse/scale, self.gt, validEntries = self.validEntries)
-        return err
-
-    def error_grad(self, scale):
-        # FIXME 
-        N = np.sum(self.validEntries)
-        topM = np.multiply((self.sparse*scale - self.gt), self.sparse)
-        topM[np.logical_not(self.validEntries)] = 0
-        top = 1.0/(N) * np.sum(topM)
-        (bot, _) = rmse_error(self.sparse*scale, self.gt, self.validEntries)
-
-        print("Grad: %1.6f / %1.6f = %1.6f" % (top,bot,(top/bot)))
-        return np.asarray([top/bot])
-
-
 def normalized_cm_viz(im1, im2, names = None):
     if names is None:
         names = ("Im1", "Im2")

@@ -2,8 +2,8 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-09 16:04:29
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-16 16:31:40
-from Depth_Estim_Net import Depth_Estim_Net as DEN
+# @Last Modified time: 2017-04-03 12:49:08
+from nets.Depth_Estim_Net import Depth_Estim_Net as DEN
 import numpy as np
 from util.ESAT_Data import ESAT_Data
 import matplotlib.pyplot as plt

@@ -2,8 +2,8 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-09 16:04:29
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-03-31 16:02:40
-from Depth_Estim_Net import Depth_Estim_Net as DEN
+# @Last Modified time: 2017-04-03 12:49:50
+from nets.Depth_Estim_Net import Depth_Estim_Net as DEN
 import numpy as np
 import PIL.Image as Im
 import matplotlib.pyplot as plt

@@ -2,22 +2,22 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 14:00:33
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-03 12:37:38
+# @Last Modified time: 2017-04-03 14:36:12
 import tensorflow as tf
 import numpy as np
 import util.SEDWarp as SEDWarp
 import matplotlib.pyplot as plt
 import util.util as util
 from scipy.misc import imresize
-from Depth_Estim_Net import Depth_Estim_Net as DEN
+from nets.Depth_Estim_Net import Depth_Estim_Net as DEN
 import cv2
 
 fnXML = "/users/visics/troussel/tmp/test_SIM3.xml"
 bpath = "/esat/citrine/troussel/IROS/kinect/Kinect2/tmp_data/office4/RGB"
 bpathDepth = "/esat/citrine/troussel/IROS/kinect/Kinect2/tmp_data/office4/depth"
 
-h = 480
-w = 640
+h = 55
+w = 74
 
 config = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/conf/init.yaml"
 
