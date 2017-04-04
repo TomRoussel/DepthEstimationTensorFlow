@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 14:00:33
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-03 14:36:12
+# @Last Modified time: 2017-04-04 16:40:05
 import tensorflow as tf
 import numpy as np
 import util.SEDWarp as SEDWarp
@@ -12,12 +12,12 @@ from scipy.misc import imresize
 from nets.Depth_Estim_Net import Depth_Estim_Net as DEN
 import cv2
 
-fnXML = "/users/visics/troussel/tmp/test_SIM3.xml"
+fnXML = "/users/visics/troussel/tmp/office4.xml"
 bpath = "/esat/citrine/troussel/IROS/kinect/Kinect2/tmp_data/office4/RGB"
 bpathDepth = "/esat/citrine/troussel/IROS/kinect/Kinect2/tmp_data/office4/depth"
 
-h = 55
-w = 74
+h = 240
+w = 320
 
 config = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/conf/init.yaml"
 
@@ -55,11 +55,13 @@ def main():
 	(poseM1, keyframe1, frame1, idName1) = SEDWarp.decode_xml(fnXML, 5, bpath)
 	keyframe1 = imresize(keyframe1, (h,w))
 	depth1 = fprop(keyframe1)
+	print(idName1)
 	depth2 = util.get_depth(idName1, bpathDepth)
 
 	frame1 = imresize(rgb2gray(frame1), (h,w))
 	depth1 = imresize(depth1, (h,w)) * 0.01
 	depth2 = imresize(depth2, (h,w)) * 0.01
+	print(depth1.shape, depth2.shape)
 	# Warp image using tensorflow implementation
 	frames = np.stack([frame1, frame1], axis=0)
 	depths = np.stack([depth1, depth2], axis=0)

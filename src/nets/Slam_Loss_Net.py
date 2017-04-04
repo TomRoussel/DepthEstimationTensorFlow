@@ -2,13 +2,14 @@
 # @Author: Tom Roussel
 # @Date:   2017-04-03 13:33:58
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-03 15:00:21
+# @Last Modified time: 2017-04-04 16:46:24
 
 import Depth_Estim_Net.Depth_Estim_Net
 import tensorflow as tf
 import util.SEDWarp as SEDWarp
 
 # FIXME: untested!
+# TODO: scale factor is not considered
 
 class Slam_Loss_Net(Depth_Estim_Net):
 	def train(self, trainingData, loadChkpt = False, lossFunc = None):
@@ -22,7 +23,6 @@ class Slam_Loss_Net(Depth_Estim_Net):
 		print("Building graph")
 		with tf.name_scope("Training"):
 			self.fullGraph = self.build_graph(training = True)
-			self.gtDepthPlaceholder = tf.placeholder(tf.float32, shape = [self.config["batchSize"], self.config["HOut"], self.config["WOut"]], name="depth_in")
 
 			self.loss = self.add_loss(self.fullGraph)
 
@@ -53,11 +53,10 @@ class Slam_Loss_Net(Depth_Estim_Net):
 				print("Initializing weights")
 				sess.run(init_op)
 			print("Done, running training ops")
-			# TODO: change this
-			for in_rgb, in_depth, poseM, warpFrames in trainingData:
+			for in_rgb, poseM, warpFrames in trainingData:
 
 				self.debug_pre_run(global_step)
-				feed_dict = {self.gtDepthPlaceholder:in_depth, self.inputGraph: in_rgb, self.poseMGraph: poseM, self.tFrame: warpFrames}
+				feed_dict = {self.inputGraph: in_rgb, self.poseMGraph: poseM, self.tFrame: warpFrames}
 				_, currentLoss, summary, step = sess.run([trainOp, self.loss, sumOp, increment_global_step_op], feed_dict = feed_dict)
 				print("Current loss is: %1.3f" % currentLoss)
 				self.debug_post_run(global_step)
@@ -72,7 +71,6 @@ class Slam_Loss_Net(Depth_Estim_Net):
 					
 			saver.save(sess, self.weightsLoc, global_step=step)
 
-	# FIXME: Invalid values are not being taken into account
 	def add_loss(self, inGraph):
 		"""
 			Constructs the warping loss
@@ -84,11 +82,17 @@ class Slam_Loss_Net(Depth_Estim_Net):
 				self.tFrame = tf.placeholder(tf.float32, shape = (self.config["batchSize"], self.config["H"], self.config["W"]),3)
 
 			with tf.name_scope("Warping"):
+				# Ugly oneliner that resized the depth image to the same size as the input frames
+				depthResized = tf.squeeze(tf.image.resize_images(tf.reshape(depth, (self.config["batchSize"], self.config["HOut"], self.config["WOut"],1))), (self.config["batchSize"], self.config["H"], self.config["W"]))
 				tFrameGray = tf.squeeze(tf.image.rgb_to_grayscale(self.tFrame))
 				warped = SEDWarp.warp_graph(inGraph, tFrameGray, self.poseMGraph)
+				oobPixels = warped == 0
 
 			with tf.name_scope("L2"):
 				tKeyFrame = tf.squeeze(tf.image.rgb_to_grayscale(self.inputGraph))
-				loss = tf.nn.l2_loss(warped - tKeyFrame)
+				diff = warped - tKeyFrame
+				# Make sure out of bounds pixels are not considered
+				diff *= tf.cast(tf.logical_not(oobPixels), tf.float32)
+				loss = tf.nn.l2_loss(diff)
 
 			return loss

@@ -2,19 +2,21 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 13:59:42
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-03 12:33:04
+# @Last Modified time: 2017-04-04 16:45:49
 
 import tensorflow as tf
 import numpy as np
 from ops import ZeroOutOps
 import xml.etree.ElementTree as ET
 from scipy.misc import imread
+import os
 
 zero_out3 = ZeroOutOps.zero_out3
 
-# TODO: properly deal with invalid pixels
-
-def _decode_frame_info(frameInfo, bpath):
+def decode_frame_info(frameInfo):
+	"""
+		Decodes the info in the xml-element. Returns the keyframe, frame, posematrix and name of the keyframe
+	"""
 	# Parse the pose matrix
 	poseMText = frameInfo.find("pose_matrix").text
 	poseMList = [float(x) for x in poseMText.split(',')]
@@ -22,22 +24,21 @@ def _decode_frame_info(frameInfo, bpath):
 
 	# Get the keyframe image
 	kfText = frameInfo.find("kf_path").text
-	kfloc = "%s/%s.png" % (bpath, kfText)
-	kf = imread(kfloc)
+	kf = imread(kfText)
 
 	# Get the compared image
 	fText = frameInfo.find("f_path").text
-	floc = "%s/%s.png" % (bpath, fText)
-	f = imread(floc)
+	f = imread(fText)
 
-	return (poseM, kf, f, kfText)
+	return (poseM, kf, f, os.path.splitext(os.path.basename(kfText))[0])
 
 def decode_xml(fnXML, index, bpath):
+	# @bpath: unused
 	# Load xml file
 	tree = ET.parse(fnXML)
 	frameInfo = tree.getroot()[index]
 	
-	return _decode_frame_info(frameInfo, bpath)
+	return decode_frame_info(frameInfo)
 
 def image_gradient(image):
 	return np.gradient(image, axis = (1,2))
@@ -132,7 +133,7 @@ def warp_using_coords(inGray, omegaDN, oobPixels):
 def warp_graph(depth, inGray, poseM):
 	"""
 		Constructs a graph that warps an image for a given depth and pose matrix
-		@depth: Depth image, flattened. Shape [batchSize, pixels]
+		@depth: Depth image. Shape [batchSize, pixels]
 		@inGray: input grayscale image, will be warped. Shape [batchSize, pixels]
 		@poseM: Posematrix representing the movement between two frames. Shape [batchSize, 4, 4]
 		@shape: output shape
@@ -178,4 +179,6 @@ def warp_graph(depth, inGray, poseM):
 	# Override gradient
 	B = zero_out3(warped, omega_dn, oobPixels)
 	warped = B + tf.stop_gradient(warped - B)
+	oobPixelsIm = tf.reshape(tf.logical_not(oobPixels), (batchSize, shape[0], shape[1]))
+	warped = warped * tf.cast(oobPixelsIm, tf.float32)
 	return warped

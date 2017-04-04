@@ -3,7 +3,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-04-04 09:26:59
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-04 11:42:41
+# @Last Modified time: 2017-04-04 14:51:51
 
 # This script merges several xml files into a single one
 
@@ -16,7 +16,7 @@ def main(fileList, outFile):
 	top = ET.Element("Data")
 	print("Looping over all input files")
 	for index, fn in enumerate(fileList):
-		print("Parsing and copying file %d" % index)
+		print("Parsing and copying file %d" % index+1)
 		tree = ET.parse(fn)
 		root = tree.getroot()
 		for frame in root:
