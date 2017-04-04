@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-02-07 16:14:25
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-03 15:08:08
+# @Last Modified time: 2017-04-04 16:54:35
 import numpy as np
 import argparse
 from nets.Depth_Estim_Net import Depth_Estim_Net as DEN
@@ -12,10 +12,6 @@ import h5py
 import tensorflow as tf
 
 # TODO: Make argument parser
-
-trainSetManifest = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/NYU2Split/train"
-validateSetManifest = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/NYU2Split/validate"
-testSetManifest = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/NYU2Split/test"
 
 configFile = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/conf/init.yaml"
 
