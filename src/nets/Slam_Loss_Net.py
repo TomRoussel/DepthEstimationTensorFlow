@@ -2,17 +2,17 @@
 # @Author: Tom Roussel
 # @Date:   2017-04-03 13:33:58
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-04 16:46:24
+# @Last Modified time: 2017-04-05 10:54:36
 
-import Depth_Estim_Net.Depth_Estim_Net
+from nets.Depth_Estim_Net import Depth_Estim_Net
 import tensorflow as tf
 import util.SEDWarp as SEDWarp
 
-# FIXME: untested!
 # TODO: scale factor is not considered
+# FIXME: NaN's are appearing in the loss --> How?
 
 class Slam_Loss_Net(Depth_Estim_Net):
-	def train(self, trainingData, loadChkpt = False, lossFunc = None):
+	def train(self, trainingData, loadChkpt = False):
 		"""
 			Train the network using inputData. This should be a numpy array, [images x H x W x C].
 			gtDepth [images x H x W]
@@ -79,13 +79,13 @@ class Slam_Loss_Net(Depth_Estim_Net):
 			# Define input graphs for warping frame and pose matrix
 			with tf.name_scope("GT"):
 				self.poseMGraph = tf.placeholder(tf.float32, shape = (self.config["batchSize"],4,4))
-				self.tFrame = tf.placeholder(tf.float32, shape = (self.config["batchSize"], self.config["H"], self.config["W"]),3)
+				self.tFrame = tf.placeholder(tf.float32, shape = (self.config["batchSize"], self.config["H"], self.config["W"],3))
 
 			with tf.name_scope("Warping"):
 				# Ugly oneliner that resized the depth image to the same size as the input frames
-				depthResized = tf.squeeze(tf.image.resize_images(tf.reshape(depth, (self.config["batchSize"], self.config["HOut"], self.config["WOut"],1))), (self.config["batchSize"], self.config["H"], self.config["W"]))
+				depthResized = tf.squeeze(tf.image.resize_images(tf.reshape(inGraph, (self.config["batchSize"], self.config["HOut"], self.config["WOut"],1)), (self.config["H"], self.config["W"])))
 				tFrameGray = tf.squeeze(tf.image.rgb_to_grayscale(self.tFrame))
-				warped = SEDWarp.warp_graph(inGraph, tFrameGray, self.poseMGraph)
+				warped = SEDWarp.warp_graph(depthResized, tFrameGray, self.poseMGraph)
 				oobPixels = warped == 0
 
 			with tf.name_scope("L2"):
@@ -96,3 +96,17 @@ class Slam_Loss_Net(Depth_Estim_Net):
 				loss = tf.nn.l2_loss(diff)
 
 			return loss
+
+	def summaries(self, training = True):
+		# Images
+		sumImageAmount = 3 if self.config["batchSize"] >= 3 else self.config["batchSize"]
+		self.add_image_summary(self.fullGraph, "Depth Estimation", sumImageAmount, False, width = self.config["WOut"], height = self.config["HOut"], reshape = True)
+		self.add_image_summary(self.inputGraph, "RGB", sumImageAmount, True)		
+
+ 		tf.summary.histogram("Depth", self.fullGraph)
+		# if training:
+		# 	self.add_image_summary(tf.reshape(self.gtDepthPlaceholder, [-1, self.config["HOut"], self.config["WOut"], 1]), "GT", 3, False)
+
+		# Scalar
+		if training:
+			tf.summary.scalar("Loss", self.loss) 

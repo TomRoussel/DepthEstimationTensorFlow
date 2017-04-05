@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 13:59:42
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-04 16:45:49
+# @Last Modified time: 2017-04-04 17:23:31
 
 import tensorflow as tf
 import numpy as np
@@ -24,11 +24,11 @@ def decode_frame_info(frameInfo):
 
 	# Get the keyframe image
 	kfText = frameInfo.find("kf_path").text
-	kf = imread(kfText)
+	kf = imread(kfText)[:,:,:3]
 
 	# Get the compared image
 	fText = frameInfo.find("f_path").text
-	f = imread(fText)
+	f = imread(fText)[:,:,:3]
 
 	return (poseM, kf, f, os.path.splitext(os.path.basename(kfText))[0])
 

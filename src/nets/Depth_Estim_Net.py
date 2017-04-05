@@ -2,13 +2,15 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-03 11:23:26
+# @Last Modified time: 2017-04-05 10:53:54
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
 import yaml
 import numpy as np
 from math import floor
+
+# TODO: Separate checkpoint loading location from checkpoint saving location
 
 class Depth_Estim_Net(object):
 	def __init__(self, weightsLoc, summaryLocation = None, config=None, confFileName=None, training=True, tfConfig = None):
@@ -212,6 +214,7 @@ class Depth_Estim_Net(object):
 				# Save weights every x steps, where x is given in the config
 				if "saveInterval" in self.config.keys():
 					if step % self.config["saveInterval"] == 0:
+						# FIXME: Add name to this
 						saver.save(sess, self.weightsLoc, global_step=step)
 					
 			saver.save(sess, self.weightsLoc, global_step=step)
