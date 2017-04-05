@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-04-03 13:33:58
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-05 10:54:36
+# @Last Modified time: 2017-04-05 12:15:08
 
 from nets.Depth_Estim_Net import Depth_Estim_Net
 import tensorflow as tf
@@ -10,6 +10,7 @@ import util.SEDWarp as SEDWarp
 
 # TODO: scale factor is not considered
 # FIXME: NaN's are appearing in the loss --> How?
+# FIXME: OOB pixels are odd
 
 class Slam_Loss_Net(Depth_Estim_Net):
 	def train(self, trainingData, loadChkpt = False):
@@ -17,6 +18,7 @@ class Slam_Loss_Net(Depth_Estim_Net):
 			Train the network using inputData. This should be a numpy array, [images x H x W x C].
 			gtDepth [images x H x W]
 			@trainingData: Is a generator function that outputs 2 variables, (in_rgb, in_depth)
+			@loadChkpt: If True, will load checkpoint in its own default location, if a path, it will load the weights from this location
 		"""
 		# Define optimizer
 		optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.config["learnRate"])
@@ -48,7 +50,8 @@ class Slam_Loss_Net(Depth_Estim_Net):
 			
 			if loadChkpt:
 				print("Loading weights from file")
-				self.load_weights(sess, self.weightsLoc, saver)
+				location = self.weightsLoc if loadChkpt == True else loadChkpt
+				self.load_weights(sess, location, saver)
 			else:
 				print("Initializing weights")
 				sess.run(init_op)
@@ -85,14 +88,14 @@ class Slam_Loss_Net(Depth_Estim_Net):
 				# Ugly oneliner that resized the depth image to the same size as the input frames
 				depthResized = tf.squeeze(tf.image.resize_images(tf.reshape(inGraph, (self.config["batchSize"], self.config["HOut"], self.config["WOut"],1)), (self.config["H"], self.config["W"])))
 				tFrameGray = tf.squeeze(tf.image.rgb_to_grayscale(self.tFrame))
-				warped = SEDWarp.warp_graph(depthResized, tFrameGray, self.poseMGraph)
-				oobPixels = warped == 0
+				self.warped = SEDWarp.warp_graph(depthResized, tFrameGray, self.poseMGraph)
+				self.oobPixels = tf.equal(self.warped, 0)
 
 			with tf.name_scope("L2"):
 				tKeyFrame = tf.squeeze(tf.image.rgb_to_grayscale(self.inputGraph))
-				diff = warped - tKeyFrame
+				diff = self.warped - tKeyFrame
 				# Make sure out of bounds pixels are not considered
-				diff *= tf.cast(tf.logical_not(oobPixels), tf.float32)
+				diff *= tf.cast(tf.logical_not(self.oobPixels), tf.float32)
 				loss = tf.nn.l2_loss(diff)
 
 			return loss
@@ -101,7 +104,9 @@ class Slam_Loss_Net(Depth_Estim_Net):
 		# Images
 		sumImageAmount = 3 if self.config["batchSize"] >= 3 else self.config["batchSize"]
 		self.add_image_summary(self.fullGraph, "Depth Estimation", sumImageAmount, False, width = self.config["WOut"], height = self.config["HOut"], reshape = True)
-		self.add_image_summary(self.inputGraph, "RGB", sumImageAmount, True)		
+		self.add_image_summary(self.inputGraph, "RGB", sumImageAmount, True)	
+		self.add_image_summary(tf.expand_dims(tf.cast(self.oobPixels,tf.float32),-1), "Out of bounds pixels", sumImageAmount, False)	
+		self.add_image_summary(tf.expand_dims(self.warped,-1), "Warped", sumImageAmount, False)	
 
  		tf.summary.histogram("Depth", self.fullGraph)
 		# if training:

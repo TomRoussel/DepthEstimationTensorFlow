@@ -2,7 +2,7 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-05 10:53:54
+# @Last Modified time: 2017-04-05 12:15:19
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -156,11 +156,12 @@ class Depth_Estim_Net(object):
 		if training:
 			tf.summary.scalar("Loss", self.loss) 
 
-	def train(self, trainingData, loadChkpt = False, lossFunc = None):
+	def train(self, trainingData, loadChkpt = None, lossFunc = None):
 		"""
 			Train the network using inputData. This should be a numpy array, [images x H x W x C].
 			gtDepth [images x H x W]
 			@trainingData: Is a generator function that outputs 2 variables, (in_rgb, in_depth)
+			@loadChkpt: If True, will load checkpoint in its own default location, if a path, it will load the weights from this location
 		"""
 		# Define optimizer
 		optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.config["learnRate"])
@@ -196,7 +197,8 @@ class Depth_Estim_Net(object):
 			
 			if loadChkpt:
 				print("Loading weights from file")
-				self.load_weights(sess, self.weightsLoc, saver)
+				location = self.weightsLoc if loadChkpt == True else loadChkpt
+				self.load_weights(sess, location, saver)
 			else:
 				print("Initializing weights")
 				sess.run(init_op)
