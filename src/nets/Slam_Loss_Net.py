@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-04-03 13:33:58
 # @Last Modified by:   Tom
-# @Last Modified time: 2017-04-10 15:21:58
+# @Last Modified time: 2017-04-10 15:43:38
 
 from nets.Depth_Estim_Net import Depth_Estim_Net
 import tensorflow as tf
@@ -13,6 +13,10 @@ import numpy as np
 # FIXME: OOB pixels are odd
 
 class Slam_Loss_Net(Depth_Estim_Net):
+	def __init__(self, weightsLoc, summaryLocation = None, config=None, confFileName=None, training=True, tfConfig = None, modelName = "depth_estimator", debugSumLocation = None):
+		super(Slam_Loss_Net, self).__init__(weightsLoc, summaryLocation, config, confFileName, training, tfConfig, modelName)
+		self.debugSumLocation = debugSumLocation
+
 	def train(self, trainingData, loadChkpt = False):
 		"""
 			Train the network using inputData. This should be a numpy array, [images x H x W x C].
