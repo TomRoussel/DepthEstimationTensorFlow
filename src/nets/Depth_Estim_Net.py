@@ -10,8 +10,6 @@ import yaml
 import numpy as np
 from math import floor
 
-# TODO: Separate checkpoint loading location from checkpoint saving location
-
 class Depth_Estim_Net(object):
 	def __init__(self, weightsLoc, summaryLocation = None, config=None, confFileName=None, training=True, tfConfig = None):
 		"""
@@ -161,7 +159,7 @@ class Depth_Estim_Net(object):
 			Train the network using inputData. This should be a numpy array, [images x H x W x C].
 			gtDepth [images x H x W]
 			@trainingData: Is a generator function that outputs 2 variables, (in_rgb, in_depth)
-			@loadChkpt: If True, will load checkpoint in its own default location, if a path, it will load the weights from this location
+			@loadChkpt: If True, will load the latest checkpoint in its own saving location, if a path, it will load the weights from this location
 		"""
 		# Define optimizer
 		optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.config["learnRate"])
