@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-04-03 13:33:58
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-05 12:15:08
+# @Last Modified time: 2017-04-07 16:47:46
 
 from nets.Depth_Estim_Net import Depth_Estim_Net
 import tensorflow as tf
@@ -88,7 +88,7 @@ class Slam_Loss_Net(Depth_Estim_Net):
 				# Ugly oneliner that resized the depth image to the same size as the input frames
 				depthResized = tf.squeeze(tf.image.resize_images(tf.reshape(inGraph, (self.config["batchSize"], self.config["HOut"], self.config["WOut"],1)), (self.config["H"], self.config["W"])))
 				tFrameGray = tf.squeeze(tf.image.rgb_to_grayscale(self.tFrame))
-				self.warped = SEDWarp.warp_graph(depthResized, tFrameGray, self.poseMGraph)
+				self.warped = SEDWarp.warp_graph(depthResized*0.01, tFrameGray, self.poseMGraph)
 				self.oobPixels = tf.equal(self.warped, 0)
 
 			with tf.name_scope("L2"):
@@ -96,7 +96,7 @@ class Slam_Loss_Net(Depth_Estim_Net):
 				diff = self.warped - tKeyFrame
 				# Make sure out of bounds pixels are not considered
 				diff *= tf.cast(tf.logical_not(self.oobPixels), tf.float32)
-				loss = tf.nn.l2_loss(diff)
+				loss = tf.nn.l2_loss(diff)/tf.reduce_sum(tf.cast(tf.logical_not(self.oobPixels), tf.float32))
 
 			return loss
 
@@ -105,8 +105,8 @@ class Slam_Loss_Net(Depth_Estim_Net):
 		sumImageAmount = 3 if self.config["batchSize"] >= 3 else self.config["batchSize"]
 		self.add_image_summary(self.fullGraph, "Depth Estimation", sumImageAmount, False, width = self.config["WOut"], height = self.config["HOut"], reshape = True)
 		self.add_image_summary(self.inputGraph, "RGB", sumImageAmount, True)	
-		self.add_image_summary(tf.expand_dims(tf.cast(self.oobPixels,tf.float32),-1), "Out of bounds pixels", sumImageAmount, False)	
-		self.add_image_summary(tf.expand_dims(self.warped,-1), "Warped", sumImageAmount, False)	
+		# self.add_image_summary(tf.expand_dims(tf.cast(self.oobPixels,tf.float32),-1), "Out of bounds pixels", sumImageAmount, False)	
+		# self.add_image_summary(tf.expand_dims(self.warped,-1), "Warped", sumImageAmount, False)	
 
  		tf.summary.histogram("Depth", self.fullGraph)
 		# if training:

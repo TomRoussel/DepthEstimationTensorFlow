@@ -2,15 +2,13 @@
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-05 12:15:19
+# @Last Modified time: 2017-04-07 15:10:21
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
 import yaml
 import numpy as np
 from math import floor
-
-# TODO: Separate checkpoint loading location from checkpoint saving location
 
 class Depth_Estim_Net(object):
 	def __init__(self, weightsLoc, summaryLocation = None, config=None, confFileName=None, training=True, tfConfig = None):
@@ -299,5 +297,14 @@ class Depth_Estim_Net(object):
 		"""
 		return
 
-
-
+	def close(self):
+		"""
+			Clears the graph if one has been built and close the session if one has started
+			The graph being cleared is the current default graph
+		"""
+		# Close session
+		if not self.sess is None:
+			self.sess.close()
+			self.sess = None
+		# Clear graph
+		tf.reset_default_graph()

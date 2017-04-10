@@ -2,18 +2,19 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-09 16:04:29
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-03 12:49:50
+# @Last Modified time: 2017-04-07 17:06:04
 from nets.Depth_Estim_Net import Depth_Estim_Net as DEN
 import numpy as np
 import PIL.Image as Im
 import matplotlib.pyplot as plt
 from scipy.misc import imresize
 
-imLoc = "/esat/citrine/troussel/IROS/kinect/Kinect2/kinData/office4/RGB/000237.png"
+imLoc = "/esat/citrine/troussel/IROS/kinect/Kinect2/kinData/office4/RGB/000200.png"
 
 config = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/conf/init.yaml"
 
-rootFolder = "/esat/citrine/troussel/IROS/depth_estim/fixedRelu_L2/" 
+# rootFolder = "/esat/citrine/troussel/IROS/depth_estim/fixedRelu_L2/"
+rootFolder = "/esat/citrine/troussel/IROS/depth_estim/init_warp_15iter/"
 weightsLoc = "%scheckpoint/" % rootFolder
 
 
