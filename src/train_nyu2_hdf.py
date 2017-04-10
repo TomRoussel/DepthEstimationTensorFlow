@@ -26,7 +26,7 @@ def prepare_data(depthFile, rootDataFolder, config):
 	"""
 	# Prepare generator with training split
 	print("Preparing data generator")
-	return NYU_Data.NYU_Data(rootDataFolder, depthFile, config)
+	return NYU_Data.NYU_Data(rootDataFolder, depthFile, config["batchSize"])
 
 def prepare_dir(summaryLoc, weightsLoc):
 	safe_mkdir(rootFolder)

@@ -28,7 +28,7 @@ def main():
 	# hdfF = h5py.File(depthFile, 'r')
 
 	# Construct data loader
-	data = NYU_Data(rootData, depthFile, net.config)
+	data = NYU_Data(rootData, depthFile, net.config["batchSize"])
 
 	rmseList = []
 	validCount = 0
