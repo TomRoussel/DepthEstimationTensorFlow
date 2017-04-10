@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 # @Author: Tom Roussel
 # @Date:   2017-04-03 13:33:58
-# @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-07 16:47:46
+# @Last Modified by:   Tom
+# @Last Modified time: 2017-04-10 15:21:58
 
 from nets.Depth_Estim_Net import Depth_Estim_Net
 import tensorflow as tf
 import util.SEDWarp as SEDWarp
+import numpy as np
 
 # FIXME: NaN's are appearing in the loss --> How?
 # FIXME: OOB pixels are odd
@@ -38,6 +39,7 @@ class Slam_Loss_Net(Depth_Estim_Net):
 			trainOp = optimizer.apply_gradients(grads)
 			sumOp = tf.summary.merge_all()
 			init_op = tf.global_variables_initializer()
+			debugSums = self.debug_sums()
 
 		print("Starting tensorflow session")
 		for key in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES): print(key)
@@ -59,9 +61,16 @@ class Slam_Loss_Net(Depth_Estim_Net):
 
 				self.debug_pre_run(global_step)
 				feed_dict = {self.inputGraph: in_rgb, self.poseMGraph: poseM, self.tFrame: warpFrames}
-				_, currentLoss, summary, step = sess.run([trainOp, self.loss, sumOp, increment_global_step_op], feed_dict = feed_dict)
+				_, currentLoss, summary, step, debugSummary = sess.run([trainOp, self.loss, sumOp, increment_global_step_op, debugSums], feed_dict = feed_dict)
 				print("Current loss is: %1.3f" % currentLoss)
 				self.debug_post_run(global_step)
+
+				######## DEBUG, CAN BE SAFELY REMOVED ########
+				if self.debugSumLocation and np.isnan(loss):
+					fw = tf.summary.FileWriter(self.debugSumLocation)
+					fw.add_summary(debugSummary, step)
+					fw.close()
+				################# END DEBUG ##################
 
 				if not self.summaryLocation is None:
 					self.sumWriter.add_summary(summary, step)
@@ -114,3 +123,15 @@ class Slam_Loss_Net(Depth_Estim_Net):
 		# Scalar
 		if training:
 			tf.summary.scalar("Loss", self.loss) 
+
+	def debug_sums(self):
+		sum1 = tf.summary.image("Input", self.inputGraph)
+		sum2 = tf.summary.image("Depth", tf.reshape(self.fullGraph, [-1, 55, 74,  1]))
+		sum3 = tf.summary.image("Input warping", self.tFrame)
+		sum4 = tf.summary.image("Warped image", self.warped)
+		sum5 = tf.summary.histogram("Input", self.inputGraph)
+		sum6 = tf.summary.histogram("Depth", tf.reshape(self.fullGraph, [-1, 55, 74,  1]))
+		sum7 = tf.summary.histogram("Input warping", self.tFrame)
+		sum8 = tf.summary.histogram("Warped image", self.warped)
+
+		return tf.merge([sum1, sum2, sum3, sum4, sum5, sum6, sum7, sum8])

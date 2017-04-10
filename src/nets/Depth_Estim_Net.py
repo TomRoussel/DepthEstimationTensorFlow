@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
-# @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-07 15:10:21
+# @Last Modified by:   Tom
+# @Last Modified time: 2017-04-10 15:28:07
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -11,7 +11,7 @@ import numpy as np
 from math import floor
 
 class Depth_Estim_Net(object):
-	def __init__(self, weightsLoc, summaryLocation = None, config=None, confFileName=None, training=True, tfConfig = None):
+	def __init__(self, weightsLoc, summaryLocation = None, config=None, confFileName=None, training=True, tfConfig = None, modelName = "depth_estimator"):
 		"""
 			@config: 		A dictionary containing all the parameters for the network. Will throw an exception if there are parameters missing.
 			@confFileName: 	Path to a yaml file containing the parameters of the network. Only this parameter or the config parameter can
@@ -27,7 +27,7 @@ class Depth_Estim_Net(object):
 			self.parse_config_from_file(confFileName)
 
 		self.summaryLocation = summaryLocation
-		self.weightsLoc = weightsLoc
+		self.weightsLoc = weightsLoc + "/" + modelName
 		self.tfConfig = tfConfig
 		self.sess = None # Session when fpropping
 		self.sumWriter = None
@@ -214,7 +214,6 @@ class Depth_Estim_Net(object):
 				# Save weights every x steps, where x is given in the config
 				if "saveInterval" in self.config.keys():
 					if step % self.config["saveInterval"] == 0:
-						# FIXME: Add name to this
 						saver.save(sess, self.weightsLoc, global_step=step)
 					
 			saver.save(sess, self.weightsLoc, global_step=step)
