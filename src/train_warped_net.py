@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-04-04 16:47:50
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-05 10:23:41
+# @Last Modified time: 2017-04-07 16:48:00
 
 from nets.Slam_Loss_Net import Slam_Loss_Net
 from data.ESAT_Warp_Data import ESAT_Warp_Data
@@ -13,9 +13,11 @@ xmlPath = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/data/
 
 configFile = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/conf/init.yaml"
 
-netBasePath = "/esat/citrine/troussel/IROS/depth_estim/init_warp"
+netBasePath = "/esat/citrine/troussel/IROS/depth_estim/init_warp_15iter"
 summaryLoc = "%s/summary" % netBasePath
 weightsLoc = "%s/checkpoint/" % netBasePath
+
+initWeight = "/esat/citrine/troussel/IROS/depth_estim/fixedRelu_L2/checkpoint/"
 
 def prepare_dir():
 	safe_mkdir(netBasePath)
@@ -32,9 +34,11 @@ def main():
 	prepare_dir()
 
 	print("Training starting")
-	for x in range(5):
-		with tf.Graph().as_default():
-			net.train(data, loadChkpt = True)
+	net.train(data, loadChkpt = initWeight)
+	for x in range(14):
+		print("Training epoch %d" % x)
+		tf.reset_default_graph()
+		net.train(data, loadChkpt = True)
 
 
 if __name__ == '__main__':
