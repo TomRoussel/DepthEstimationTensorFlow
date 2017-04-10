@@ -8,7 +8,6 @@ from nets.Depth_Estim_Net import Depth_Estim_Net
 import tensorflow as tf
 import util.SEDWarp as SEDWarp
 
-# TODO: scale factor is not considered
 # FIXME: NaN's are appearing in the loss --> How?
 # FIXME: OOB pixels are odd
 
@@ -74,7 +73,7 @@ class Slam_Loss_Net(Depth_Estim_Net):
 					
 			saver.save(sess, self.weightsLoc, global_step=step)
 
-	def add_loss(self, inGraph):
+	def add_loss(self, inGraph, slamScale = 1):
 		"""
 			Constructs the warping loss
 		"""
@@ -88,7 +87,7 @@ class Slam_Loss_Net(Depth_Estim_Net):
 				# Ugly oneliner that resized the depth image to the same size as the input frames
 				depthResized = tf.squeeze(tf.image.resize_images(tf.reshape(inGraph, (self.config["batchSize"], self.config["HOut"], self.config["WOut"],1)), (self.config["H"], self.config["W"])))
 				tFrameGray = tf.squeeze(tf.image.rgb_to_grayscale(self.tFrame))
-				self.warped = SEDWarp.warp_graph(depthResized*0.01, tFrameGray, self.poseMGraph)
+				self.warped = SEDWarp.warp_graph(depthResized * slamScale, tFrameGray, self.poseMGraph)
 				self.oobPixels = tf.equal(self.warped, 0)
 
 			with tf.name_scope("L2"):
