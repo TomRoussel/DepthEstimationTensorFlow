@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-03-16 13:59:42
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-04 17:23:31
+# @Last Modified time: 2017-04-11 13:59:49
 
 import tensorflow as tf
 import numpy as np
@@ -130,7 +130,7 @@ def warp_using_coords(inGray, omegaDN, oobPixels):
 	warped = _indexing_op_(inGray, omegaFlat_VO)
 	return warped
 
-def warp_graph(depth, inGray, poseM):
+def warp_graph(depth, inGray, poseM, eps = 1e-9):
 	"""
 		Constructs a graph that warps an image for a given depth and pose matrix
 		@depth: Depth image. Shape [batchSize, pixels]
@@ -147,7 +147,7 @@ def warp_graph(depth, inGray, poseM):
 
 	depthFlat = tf.reshape(depth, (batchSize, pixelAmount))
 	# Add small value to prevent division by zero later on
-	depthFlat += 1e-9
+	depthFlat += eps
 
 	# Generate pixel points
 	pp = np.stack(expand(np.arange(pixelAmount)), axis=0)
@@ -166,7 +166,7 @@ def warp_graph(depth, inGray, poseM):
 	# Use tf.einsum for batch matmul
 	projectedPoints = tf.einsum('aij,ajk->aik', poseM, positionV)
 
-	omega = tf.stack([projectedPoints[:,1,:]/projectedPoints[:,2,:], projectedPoints[:,0,:]/projectedPoints[:,2,:]], axis = 1)
+	omega = tf.stack([projectedPoints[:,1,:]/(projectedPoints[:,2,:] + eps), projectedPoints[:,0,:]/(projectedPoints[:,2,:] + eps)], axis = 1)
 
 	# Keep track of what will be out of bounds in the image
 	# Temporary variable of shape [batch x 2 x pixels]. Second axis denotes x and y positions, if either are out of bounds the entire pixel is
