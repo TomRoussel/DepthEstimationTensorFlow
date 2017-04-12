@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: troussel
 # @Date:   2017-02-03 15:40:55
-# @Last Modified by:   Tom
-# @Last Modified time: 2017-04-10 15:28:07
+# @Last Modified by:   Tom Roussel
+# @Last Modified time: 2017-04-11 10:31:50
 
 import tensorflow as tf
 from tensorflow.contrib.layers import convolution2d, batch_norm, max_pool2d, fully_connected
@@ -27,7 +27,8 @@ class Depth_Estim_Net(object):
 			self.parse_config_from_file(confFileName)
 
 		self.summaryLocation = summaryLocation
-		self.weightsLoc = weightsLoc + "/" + modelName
+		self.weightsLoc = weightsLoc
+		self.modelName = modelName
 		self.tfConfig = tfConfig
 		self.sess = None # Session when fpropping
 		self.sumWriter = None
@@ -162,6 +163,8 @@ class Depth_Estim_Net(object):
 			@loadChkpt: If True, will load the latest checkpoint in its own saving location, if a path, it will load the weights from this location
 		"""
 		# Define optimizer
+		saveLoc = ("%s/%s" % (self.weightsLoc, self.modelName)).replace("//", "/") # Getting rid of double slashes is necessary for loading the weights again
+
 		optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.config["learnRate"])
 		print("Building graph")
 		with tf.name_scope("Training"):
@@ -214,9 +217,10 @@ class Depth_Estim_Net(object):
 				# Save weights every x steps, where x is given in the config
 				if "saveInterval" in self.config.keys():
 					if step % self.config["saveInterval"] == 0:
-						saver.save(sess, self.weightsLoc, global_step=step)
-					
-			saver.save(sess, self.weightsLoc, global_step=step)
+						saver.save(sess, saveLoc, global_step=step)
+
+
+			saver.save(sess, saveLoc, global_step=step)
 
 	def fprop(self, inData):
 		"""

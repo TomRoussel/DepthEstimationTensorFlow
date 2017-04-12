@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Tom Roussel
 # @Date:   2017-04-03 13:33:58
-# @Last Modified by:   Tom
-# @Last Modified time: 2017-04-10 15:43:38
+# @Last Modified by:   Tom Roussel
+# @Last Modified time: 2017-04-11 14:51:01
 
 from nets.Depth_Estim_Net import Depth_Estim_Net
 import tensorflow as tf
@@ -24,29 +24,38 @@ class Slam_Loss_Net(Depth_Estim_Net):
 			@trainingData: Is a generator function that outputs 2 variables, (in_rgb, in_depth)
 			@loadChkpt: If True, will load checkpoint in its own default location, if a path, it will load the weights from this location
 		"""
+		# Path to the save location for the weights
+		saveLoc = ("%s/%s" % (self.weightsLoc, self.modelName)).replace("//", "/") # Getting rid of double slashes is necessary for loading the weights again
+
 		# Define optimizer
 		optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.config["learnRate"])
 		print("Building graph")
 		with tf.name_scope("Training"):
 			self.fullGraph = self.build_graph(training = True)
 
-			self.loss = self.add_loss(self.fullGraph)
+			self.loss = self.add_loss(self.fullGraph, slamScale = 0.01)
 
-			# Add summaries
-			self.summaries()
 			# Add global step variable
 			global_step = tf.Variable(0, name="global_step")
 			increment_global_step_op = tf.assign(global_step, global_step+1)
 
 			# Applying gradients
 			grads = optimizer.compute_gradients(self.loss)
+
+			######## DEBUG, CAN BE SAFELY REMOVED ########
+			gradBias = grads[-2][0]
+			tf.summary.image("Gradient image",tf.reshape(gradBias, (1,self.config["HOut"],self.config["WOut"],1)))
+			################# END DEBUG ##################
+
+			# Add summaries
+			self.summaries()
 			trainOp = optimizer.apply_gradients(grads)
 			sumOp = tf.summary.merge_all()
 			init_op = tf.global_variables_initializer()
 			debugSums = self.debug_sums()
 
 		print("Starting tensorflow session")
-		for key in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES): print(key)
+		# for key in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES): print(key)
 		with tf.Session(config = self.tfConfig) as sess:
 			if not self.summaryLocation is None:
 				self.sumWriter = tf.summary.FileWriter(self.summaryLocation, graph=sess.graph)
@@ -70,7 +79,7 @@ class Slam_Loss_Net(Depth_Estim_Net):
 				self.debug_post_run(global_step)
 
 				######## DEBUG, CAN BE SAFELY REMOVED ########
-				if self.debugSumLocation and np.isnan(loss):
+				if self.debugSumLocation and np.isnan(currentLoss):
 					fw = tf.summary.FileWriter(self.debugSumLocation)
 					fw.add_summary(debugSummary, step)
 					fw.close()
@@ -82,9 +91,9 @@ class Slam_Loss_Net(Depth_Estim_Net):
 				# Save weights every x steps, where x is given in the config
 				if "saveInterval" in self.config.keys():
 					if step % self.config["saveInterval"] == 0:
-						saver.save(sess, self.weightsLoc, global_step=step)
+						saver.save(sess, saveLoc, global_step=step)
 					
-			saver.save(sess, self.weightsLoc, global_step=step)
+			saver.save(sess, saveLoc, global_step=step)
 
 	def add_loss(self, inGraph, slamScale = 1):
 		"""
@@ -132,10 +141,10 @@ class Slam_Loss_Net(Depth_Estim_Net):
 		sum1 = tf.summary.image("Input", self.inputGraph)
 		sum2 = tf.summary.image("Depth", tf.reshape(self.fullGraph, [-1, 55, 74,  1]))
 		sum3 = tf.summary.image("Input warping", self.tFrame)
-		sum4 = tf.summary.image("Warped image", self.warped)
+		sum4 = tf.summary.image("Warped image", tf.expand_dims(self.warped, axis = 3))
 		sum5 = tf.summary.histogram("Input", self.inputGraph)
 		sum6 = tf.summary.histogram("Depth", tf.reshape(self.fullGraph, [-1, 55, 74,  1]))
 		sum7 = tf.summary.histogram("Input warping", self.tFrame)
-		sum8 = tf.summary.histogram("Warped image", self.warped)
+		# sum8 = tf.summary.histogram("Warped image", self.warped)
 
-		return tf.merge([sum1, sum2, sum3, sum4, sum5, sum6, sum7, sum8])
+		return tf.summary.merge([sum1, sum2, sum3, sum4, sum5, sum6, sum7])
