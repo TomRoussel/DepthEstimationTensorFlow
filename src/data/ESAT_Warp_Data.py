@@ -2,7 +2,7 @@
 # @Author: Tom Roussel
 # @Date:   2017-04-03 15:49:47
 # @Last Modified by:   Tom Roussel
-# @Last Modified time: 2017-04-04 17:31:32
+# @Last Modified time: 2017-04-11 17:13:33
 
 import numpy as np
 from math import floor
@@ -10,17 +10,25 @@ from util.SEDWarp import decode_frame_info
 import xml.etree.ElementTree as ET
 from scipy.misc import imresize
 
+# NOTE: Can most likely be sped up by converting everything to an HDF file
 class ESAT_Warp_Data(object):
 	"""
 		This class handles loading the ESAT sequence 
 		dataset recorded by the kinect2
 	"""
-	def __init__(self, fnXML, batchSize, shape):
+	def __init__(self, fnXML, batchSize, shape, invertPose = False):
+		"""
+			@fnXML      : filename of xml file containing data paths and pose matrix
+			@batchSize  : desired size of each batch
+			@shape	    : desired output shape of the keyframe and frame
+			@invertPose : if set to True, keyframe and frame will be swapped and posematrix will be inverted
+		"""
 		self.fnXML = fnXML
 		self.batchSize = batchSize
 		# Get amount of batches
 		self.batchAm = floor(len(ET.parse(fnXML).getroot())/batchSize)
 		self.shape = shape
+		self.invertPose = invertPose
 		print("File contains %d batches using a batchsize of %d" % (self.batchAm, batchSize))		
 
 
@@ -42,7 +50,11 @@ class ESAT_Warp_Data(object):
 				keyframes[index,:,:,:] = imresize(keyframe, self.shape)
 				frames[index,:,:,:] = imresize(frame, self.shape)
 
-			return keyframes, poseMs, frames
+			if not self.invertPose:
+				return keyframes, poseMs, frames
+			else:
+				poseMs = np.linalg.inv(poseMs)
+				return frames, poseMs, keyframes
 
 	def __len__(self):
 		return self.batchAm

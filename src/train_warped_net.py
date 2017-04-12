@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Tom Roussel
 # @Date:   2017-04-04 16:47:50
-# @Last Modified by:   Tom
-# @Last Modified time: 2017-04-10 15:46:10
+# @Last Modified by:   Tom Roussel
+# @Last Modified time: 2017-04-11 17:14:49
 
 from nets.Slam_Loss_Net import Slam_Loss_Net
 from data.ESAT_Warp_Data import ESAT_Warp_Data
@@ -13,7 +13,7 @@ xmlPath = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/data/
 
 configFile = "/users/visics/troussel/Tensor_Workspace/Python_Code/depth_estim/conf/init.yaml"
 
-netBasePath = "/esat/citrine/troussel/IROS/depth_estim/init_warp_15iter"
+netBasePath = "/esat/citrine/troussel/IROS/depth_estim/warp_kfswapped"
 summaryLoc = "%s/summary" % netBasePath
 weightsLoc = "%s/checkpoint/" % netBasePath
 debugSumLoc = "%s/debug_sum/" % netBasePath
@@ -32,7 +32,7 @@ def main():
 	net = Slam_Loss_Net(weightsLoc, summaryLocation = summaryLoc, confFileName = configFile, debugSumLocation = debugSumLoc)
 	# Data grabber object
 	print("Preparing data grabber")
-	data = ESAT_Warp_Data(xmlPath, net.config["batchSize"], (net.config["H"],net.config["W"]))
+	data = ESAT_Warp_Data(xmlPath, net.config["batchSize"], (net.config["H"],net.config["W"]), invertPose = True)
 	prepare_dir()
 
 	print("Training starting")
